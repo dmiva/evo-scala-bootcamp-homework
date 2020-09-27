@@ -16,11 +16,4 @@ object Basics {
     else gcd(b, a % b)
   }
 
-  def main(args: Array[String]): Unit = {
-    println(gcd(48,18) == 6)
-    println(gcd(48,-18))
-    println(gcd(48,180) == 12)
-    println(lcm(48,180) == 720)
-    println(lcm(0,0))
-  }
 }
