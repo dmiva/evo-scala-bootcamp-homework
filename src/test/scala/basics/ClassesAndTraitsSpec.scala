@@ -1,6 +1,6 @@
-package classes_and_traits
+package basics
 
-import ClassesAndTraits._
+import basics.ClassesAndTraits._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

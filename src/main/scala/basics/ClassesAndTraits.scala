@@ -1,4 +1,4 @@
-package classes_and_traits
+package basics
 
 object ClassesAndTraits {
 
