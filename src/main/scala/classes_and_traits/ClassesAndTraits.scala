@@ -18,7 +18,6 @@ object ClassesAndTraits {
   // to skip it (leave unimplemented), the primary intent of this
   // exercise is modelling using case classes and traits, and not math.
 
-
   sealed trait Shape[A] extends Located with Bounded with Movable[A] with Spaced
 
   sealed trait Shape3D[A] extends Located3D with Bounded3D with Movable3D[A] with Volumetric
@@ -56,6 +55,7 @@ object ClassesAndTraits {
       }
     }
   }
+
   object Bounded3D {
     def minimumBoundingBox(objects: Set[Bounded3D]): Bounded3D = {
       new Bounded3D {
@@ -70,6 +70,7 @@ object ClassesAndTraits {
       }
     }
   }
+
   sealed trait Movable[A] {
     def move(dx: Double, dy: Double): A
   }
@@ -99,7 +100,6 @@ object ClassesAndTraits {
   }
 
   // 2D shapes
-
   final case class Point(x: Double, y: Double) extends Shape[Point] {
     override def minX: Double = x
     override def maxX: Double = x
@@ -173,6 +173,7 @@ object ClassesAndTraits {
     override def move(dx: Double, dy: Double, dz: Double): Point3D = Point3D(x + dx, y + dy, z + dz)
     override def surfaceArea: Double = 0
     override def volume: Double = 0
+    //override def toString: String = s"Point3D(x = $x, y = $y, z = $z)"
   }
 
   final case class Sphere(origin: Point3D, radius: Double) extends Shape3D[Sphere] {
@@ -241,12 +242,8 @@ object ClassesAndTraits {
     case Sphere(origin, radius) => s"Sphere(Point3D(x = ${origin.x}, y = ${origin.y}, z = ${origin.z}), radius = $radius)"
     case Cuboid(origin, length, width, height) => s"Cuboid(Point3D(x = ${origin.x}, y = ${origin.y}, z = ${origin.z}), length = $length, width = $width, height = $height)"
     case Cube(origin, length) => s"Cube(Point3D(x = ${origin.x}, y = ${origin.y}, z = ${origin.z}), length = $length)"
+//    case Triangle3D(origin, base, baseHeight, height) => s"Triangle3D($origin, base = $base, baseHeight = $baseHeight, height = $height)"
     case Triangle3D(origin, base, baseHeight, height) => s"Triangle3D(Point3D(x = ${origin.x}, y = ${origin.y}, z = ${origin.z}), base = $base, baseHeight = $baseHeight, height = $height)"
-  }
-
-  def main(args: Array[String]): Unit = {
-    val tr1 = Triangle3D(Point3D(3,5,4), 3, 5, 10)
-    println(tr1.volume)
   }
 
 }
