@@ -43,11 +43,15 @@ object ControlStructuresHomework {
   final case class ChangeMe(value: String) extends Result // adjust Result as required to match requirements
 
   def parseCommand(x: String): Either[ErrorMessage, Command] = {
-    ??? // implement this method
+    // implement this method
     // Implementation hints:
     // You can use String#split, convert to List using .toList, then pattern match on:
     //   case x :: xs => ???
+    val command = x.split("\\s+")
 
+    command(0) match {
+      case "divide" => Right(Command.Divide(command(1).toDouble, command(2).toDouble))
+    }
     // Consider how to handle extra whitespace gracefully (without errors).
   }
 
@@ -71,6 +75,10 @@ object ControlStructuresHomework {
   }
 
   // This `main` method reads lines from stdin, passes each to `process` and outputs the return value to stdout
-    def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
+//    def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
+    def main(args: Array[String]): Unit = {
+      val cmd = parseCommand("divide 4 5")
+      println(cmd)
+    }
 }
 
