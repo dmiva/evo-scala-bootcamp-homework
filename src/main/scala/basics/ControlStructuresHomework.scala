@@ -38,6 +38,11 @@ object ControlStructuresHomework {
   }
 
   final case class ErrorMessage(value: String)
+  object ErrorMessage {
+    val INVALID_INPUT = "Error: Invalid input"
+    val INCORRECT_CMD_NAME = "Error: Incorrect command name: "
+    val INPUT_ARGS_NOT_EQUAL_TO_TWO = "Error: There must be 2 input arguments"
+  }
 
   sealed trait Result
   final case class ChangeMe(value: String) extends Result // adjust Result as required to match requirements
@@ -47,11 +52,26 @@ object ControlStructuresHomework {
     // Implementation hints:
     // You can use String#split, convert to List using .toList, then pattern match on:
     //   case x :: xs => ???
-    val command = x.split("\\s+")
+    val command = x.split("\\s+").toList
 
-    command(0) match {
-      case "divide" => Right(Command.Divide(command(1).toDouble, command(2).toDouble))
+    val head = command.headOption
+    
+    val tail = command.tail.map(_.toDoubleOption)
+    if (tail.contains(None)) Left(ErrorMessage(ErrorMessage.INVALID_INPUT))
+    else {
+      head match {
+        case Some("divide") =>
+          if (tail.size != 2) Left(ErrorMessage(ErrorMessage.INPUT_ARGS_NOT_EQUAL_TO_TWO))
+          else Right(Command.Divide(tail.head.getOrElse(0), tail.last.getOrElse(0)))
+        case Some("sum") => Right(Command.Sum(tail.flatten))
+        case Some("average") => Right(Command.Average(tail.flatten))
+        case Some("min") => Right(Command.Min(tail.flatten))
+        case Some("max") => Right(Command.Max(tail.flatten))
+        case other => Left(ErrorMessage(ErrorMessage.INCORRECT_CMD_NAME + s"${other.getOrElse("Unknown")}"))
+      }
     }
+
+
     // Consider how to handle extra whitespace gracefully (without errors).
   }
 
@@ -77,8 +97,17 @@ object ControlStructuresHomework {
   // This `main` method reads lines from stdin, passes each to `process` and outputs the return value to stdout
 //    def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
     def main(args: Array[String]): Unit = {
-      val cmd = parseCommand("divide 4 5")
-      println(cmd)
+      val cmd1 = parseCommand("divide 4 5")
+      val cmd2 = parseCommand("sum 5 5 6 8.5")
+      val cmd3 = parseCommand("average 4 3 8.5 4")
+      val cmd4 = parseCommand("min 4 -3 -17")
+      val cmd5 = parseCommand("max 4 -3 -17")
+      println(cmd1)
+      println(cmd2)
+      println(cmd3)
+      println(cmd4)
+      println(cmd5)
+
     }
 }
 
