@@ -37,11 +37,11 @@ object ControlStructuresHomework {
     final case class Max(numbers: List[Double]) extends Command
 
     def render(x: Command): String = x match {
-      case Divide(dividend, divisor) => s"$dividend divided by $divisor"
-      case Sum(numbers) => s"the sum of ${numbers.mkString(" ")}"
-      case Average(numbers) => s"the average of ${numbers.mkString(" ")}"
-      case Min(numbers) => s"the minimum of ${numbers.mkString(" ")}"
-      case Max(numbers) => s"the maximum of ${numbers.mkString(" ")}"
+      case Divide(dividend, divisor)  => s"$dividend divided by $divisor"
+      case Sum(numbers)               => s"the sum of ${numbers.mkString(" ")}"
+      case Average(numbers)           => s"the average of ${numbers.mkString(" ")}"
+      case Min(numbers)               => s"the minimum of ${numbers.mkString(" ")}"
+      case Max(numbers)               => s"the maximum of ${numbers.mkString(" ")}"
     }
   }
 
@@ -62,11 +62,11 @@ object ControlStructuresHomework {
     final case class Max(x: Command, value: String) extends Result
 
     def render(x: Result): String = x match {
-      case Divide(x, value) => s"${Command.render(x)} is $value"
-      case Sum(x, value) =>s"${Command.render(x)} is $value}"
-      case Average(x, value) =>s"${Command.render(x)} is $value}"
-      case Min(x, value) =>s"${Command.render(x)} is $value}"
-      case Max(x, value) =>s"${Command.render(x)} is $value}"
+      case Divide(x, value)   => s"${Command.render(x)} is $value"
+      case Sum(x, value)      => s"${Command.render(x)} is $value"
+      case Average(x, value)  => s"${Command.render(x)} is $value"
+      case Min(x, value)      => s"${Command.render(x)} is $value"
+      case Max(x, value)      => s"${Command.render(x)} is $value"
     }
   }
 
@@ -75,6 +75,7 @@ object ControlStructuresHomework {
     // Implementation hints:
     // You can use String#split, convert to List using .toList, then pattern match on:
     //   case x :: xs => ???
+    // Consider how to handle extra whitespace gracefully (without errors).
     val command = x.split("\\s+").toList
 
     val head = command.headOption
@@ -93,9 +94,6 @@ object ControlStructuresHomework {
         case other => Left(ErrorMessage(ErrorMessage.INCORRECT_CMD_NAME + s"${other.getOrElse("Unknown")}"))
       }
     }
-
-
-    // Consider how to handle extra whitespace gracefully (without errors).
   }
 
   // should return an error (using `Left` channel) in case of division by zero and other
@@ -123,38 +121,54 @@ object ControlStructuresHomework {
     // (map over the Left channel) and `merge` (convert `Either[A, A]` into `A`),
     // but you can also avoid using them using pattern matching.
 
-    ??? // implement using a for-comprehension
+    // implement using a for-comprehension
+    val result = for {
+      parsedInput <- parseCommand(x)
+      calculatedCommand <- calculate(parsedInput)
+    } yield renderResult(calculatedCommand)
+
+    result match {
+      case Left(error) => error.value
+      case Right(value) => value
+    }
+
   }
 
   // This `main` method reads lines from stdin, passes each to `process` and outputs the return value to stdout
 //    def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
-    def main(args: Array[String]): Unit = {
-      val cmd1 = parseCommand("divide 4 5")
-      val cmd2 = parseCommand("sum 5 5 6 8.5")
-      val cmd3 = parseCommand("average 4 3 8.5 4")
-      val cmd4 = parseCommand("min 4 -3 -17")
-      val cmd5 = parseCommand("max 4 -3 -17")
-      println(cmd1)
-      println(cmd2)
-      println(cmd3)
-      println(cmd4)
-      println(cmd5)
+  def main(args: Array[String]): Unit = {
+//    val cmd1 = parseCommand("divide 4 5")
+//    val cmd2 = parseCommand("sum 5 5 6 8.5")
+//    val cmd3 = parseCommand("average 4 3 8.5 4")
+//    val cmd4 = parseCommand("min 4 -3 -17")
+//    val cmd5 = parseCommand("max 4 -3 -17")
+//    println(cmd1)
+//    println(cmd2)
+//    println(cmd3)
+//    println(cmd4)
+//    println(cmd5)
+//
+//    println()
+//
+//    val calc1 = calculate(Command.Divide(4,5))
+//    println(calc1)
+//    val calc2 = calculate(Command.Sum(List(5,5,6,8.5)))
+//    println(calc2)
+//    val calc3 = calculate(Command.Average(List(4,3,8.5,4)))
+//    println(calc3)
+//
+//    println()
 
-      println()
-
-      val calc1 = calculate(Command.Divide(4,5))
-      println(calc1)
-      val calc2 = calculate(Command.Sum(List(5,5,6,8.5)))
-      println(calc2)
-      val calc3 = calculate(Command.Average(List(4,3,8.5,4)))
-      println(calc3)
-
-      println()
-
-      val res1 = Result.Divide(Command.Divide(4,5), "0.8")
-      println(Result.render(res1))
-      val res2 = Result.Sum(Command.Sum(List(5,5,6,8.5)), "24.5")
-      println(Result.render(res2))
-    }
+    val proc1 = process("divide -2 6")
+    println(proc1)
+  println(formatValue(3.4))
+  println(formatValue(3))
+//    println()
+//
+//    val res1 = Result.Divide(Command.Divide(4,5), "0.8")
+//    println(Result.render(res1))
+//    val res2 = Result.Sum(Command.Sum(List(5,5,6,8.5)), "24.5")
+//    println(Result.render(res2))
+  }
 }
 
