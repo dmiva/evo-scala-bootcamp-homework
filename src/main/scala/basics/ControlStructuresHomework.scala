@@ -35,6 +35,14 @@ object ControlStructuresHomework {
     final case class Average(numbers: List[Double]) extends Command
     final case class Min(numbers: List[Double]) extends Command
     final case class Max(numbers: List[Double]) extends Command
+
+    def render(x: Command): String = x match {
+      case Divide(dividend, divisor) => s"$dividend divided by $divisor"
+      case Sum(numbers) => s"the sum of ${numbers.mkString(" ")}"
+      case Average(numbers) => s"the average of ${numbers.mkString(" ")}"
+      case Min(numbers) => s"the minimum of ${numbers.mkString(" ")}"
+      case Max(numbers) => s"the maximum of ${numbers.mkString(" ")}"
+    }
   }
 
   final case class ErrorMessage(value: String)
@@ -44,8 +52,22 @@ object ControlStructuresHomework {
     val INPUT_ARGS_NOT_EQUAL_TO_TWO = "Error: There must be 2 input arguments"
   }
 
-  sealed trait Result
-  final case class ChangeMe(value: String) extends Result // adjust Result as required to match requirements
+  sealed trait Result // adjust Result as required to match requirements
+  object Result {
+    final case class Divide(x: Command, value: String) extends Result
+    final case class Sum(x: Command, value: String) extends Result
+    final case class Average(x: Command, value: String) extends Result
+    final case class Min(x: Command, value: String) extends Result
+    final case class Max(x: Command, value: String) extends Result
+
+    def render(x: Result): String = x match {
+      case Divide(x, value) => s"${Command.render(x)} is $value"
+      case Sum(x, value) =>s"${Command.render(x)} is $value}"
+      case Average(x, value) =>s"${Command.render(x)} is $value}"
+      case Min(x, value) =>s"${Command.render(x)} is $value}"
+      case Max(x, value) =>s"${Command.render(x)} is $value}"
+    }
+  }
 
   def parseCommand(x: String): Either[ErrorMessage, Command] = {
     // implement this method
@@ -79,10 +101,11 @@ object ControlStructuresHomework {
   // invalid operations
   def calculate(x: Command): Either[ErrorMessage, Result] = {
     ??? // implement this method
+
   }
 
   def renderResult(x: Result): String = {
-    ??? // implement this method
+    Result.render(x)
   }
 
   def process(x: String): String = {
@@ -102,12 +125,17 @@ object ControlStructuresHomework {
       val cmd3 = parseCommand("average 4 3 8.5 4")
       val cmd4 = parseCommand("min 4 -3 -17")
       val cmd5 = parseCommand("max 4 -3 -17")
+
       println(cmd1)
       println(cmd2)
       println(cmd3)
       println(cmd4)
       println(cmd5)
 
+      val res1 = Result.Divide(Command.Divide(4,5), "0.8")
+      println(Result.render(res1))
+      val res2 = Result.Sum(Command.Sum(List(5,5,6,8.5)), "24.5")
+      println(Result.render(res2))
     }
 }
 
