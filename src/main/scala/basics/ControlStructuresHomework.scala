@@ -50,6 +50,7 @@ object ControlStructuresHomework {
     val INVALID_INPUT = "Error: Invalid input"
     val INCORRECT_CMD_NAME = "Error: Incorrect command name: "
     val INPUT_ARGS_NOT_EQUAL_TO_TWO = "Error: There must be 2 input arguments"
+    val DIVISION_BY_ZERO = "Error: Division by zero"
   }
 
   sealed trait Result // adjust Result as required to match requirements
@@ -100,7 +101,15 @@ object ControlStructuresHomework {
   // should return an error (using `Left` channel) in case of division by zero and other
   // invalid operations
   def calculate(x: Command): Either[ErrorMessage, Result] = {
-    ??? // implement this method
+    x match {
+      case Command.Divide(dividend, divisor) =>
+        if (divisor == 0) Left(ErrorMessage(ErrorMessage.DIVISION_BY_ZERO))
+        else Right(Result.Divide(x, (dividend/divisor).toString))
+      case Command.Sum(numbers) => Right(Result.Sum(x, numbers.sum.toString))
+      case Command.Average(numbers) => Right(Result.Average(x, (numbers.sum/numbers.length).toString))
+      case Command.Min(numbers) => Right(Result.Min(x, numbers.min.toString))
+      case Command.Max(numbers) => Right(Result.Max(x, numbers.max.toString))
+    }
 
   }
 
@@ -125,12 +134,22 @@ object ControlStructuresHomework {
       val cmd3 = parseCommand("average 4 3 8.5 4")
       val cmd4 = parseCommand("min 4 -3 -17")
       val cmd5 = parseCommand("max 4 -3 -17")
-
       println(cmd1)
       println(cmd2)
       println(cmd3)
       println(cmd4)
       println(cmd5)
+
+      println()
+
+      val calc1 = calculate(Command.Divide(4,5))
+      println(calc1)
+      val calc2 = calculate(Command.Sum(List(5,5,6,8.5)))
+      println(calc2)
+      val calc3 = calculate(Command.Average(List(4,3,8.5,4)))
+      println(calc3)
+
+      println()
 
       val res1 = Result.Divide(Command.Divide(4,5), "0.8")
       println(Result.render(res1))
