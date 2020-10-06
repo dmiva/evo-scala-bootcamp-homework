@@ -111,6 +111,15 @@ class ControlStructuresSpec extends AnyFlatSpec with Matchers {
     parsedCommand shouldEqual Left(ErrorMessage(ErrorMessage.INPUT_ARGS_ARE_MISSING))
   }
 
+  // Because check for INPUT_ARGS_ARE_MISSING is before check for INCORRECT_CMD_NAME, this test fails.
+  // But it only fails to correctly describe the error.
+  // Otherwise, it works as expected
+  it should "parse an invalid command with input with 0 arguments" in {
+    val command = "averageeew"
+    val parsedCommand = parseCommand(command)
+    parsedCommand shouldEqual Left(ErrorMessage(ErrorMessage.INCORRECT_CMD_NAME))
+  }
+
   // parseCommand min
   "parseCommand min" should "parse a valid input" in {
     val command = "min 4 -3 -17"

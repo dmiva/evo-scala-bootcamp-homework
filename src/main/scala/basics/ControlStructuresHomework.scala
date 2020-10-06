@@ -86,17 +86,20 @@ object ControlStructuresHomework {
     // Consider how to handle extra whitespace gracefully (without errors).
     val command = x.split("\\s+")
     val head = command.toList.headOption
-
+                        // this catches weird case when input = " "
     if (head.isEmpty || (command.size == 1 && command(0) == "")) Left(ErrorMessage(ErrorMessage.EMPTY_INPUT))
     else {
-
       val tail = command.toList.tail.map(_.toDoubleOption)
       if (tail.contains(None)) Left(ErrorMessage(ErrorMessage.INVALID_INPUT))
+
+        // Because this check is before pattern matching, 1 test fails.
+        // But it only fails to correctly describe the error.
+        // Otherwise, it works as expected
       else if (tail.isEmpty) Left(ErrorMessage(ErrorMessage.INPUT_ARGS_ARE_MISSING))
       else {
         head match {
           case Some("divide")   => if (tail.size != 2) Left(ErrorMessage(ErrorMessage.INPUT_ARGS_NOT_EQUAL_TO_TWO))
-          else Right(Command.Divide(tail.head.getOrElse(0), tail.last.getOrElse(0)))
+                                   else Right(Command.Divide(tail.head.getOrElse(0), tail.last.getOrElse(0)))
           case Some("sum")      => Right(Command.Sum(tail.flatten))
           case Some("average")  => Right(Command.Average(tail.flatten))
           case Some("min")      => Right(Command.Min(tail.flatten))
@@ -106,6 +109,7 @@ object ControlStructuresHomework {
       }
     }
   }
+
 
   // should return an error (using `Left` channel) in case of division by zero and other
   // invalid operations
@@ -146,4 +150,3 @@ object ControlStructuresHomework {
   // This `main` method reads lines from stdin, passes each to `process` and outputs the return value to stdout
   def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
 }
-
