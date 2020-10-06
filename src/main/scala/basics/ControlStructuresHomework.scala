@@ -37,20 +37,22 @@ object ControlStructuresHomework {
     final case class Max(numbers: List[Double]) extends Command
 
     def render(x: Command): String = x match {
-      case Divide(dividend, divisor)  => s"$dividend divided by $divisor"
-      case Sum(numbers)               => s"the sum of ${numbers.mkString(" ")}"
-      case Average(numbers)           => s"the average of ${numbers.mkString(" ")}"
-      case Min(numbers)               => s"the minimum of ${numbers.mkString(" ")}"
-      case Max(numbers)               => s"the maximum of ${numbers.mkString(" ")}"
+      case Divide(dividend, divisor)  => s"${formatValue(dividend)} divided by ${formatValue(divisor)}"
+      case Sum(numbers)               => s"the sum of ${numbers.map(formatValue).mkString(" ")}"
+      case Average(numbers)           => s"the average of ${numbers.map(formatValue).mkString(" ")}"
+      case Min(numbers)               => s"the minimum of ${numbers.map(formatValue).mkString(" ")}"
+      case Max(numbers)               => s"the maximum of ${numbers.map(formatValue).mkString(" ")}"
     }
   }
 
   final case class ErrorMessage(value: String)
   object ErrorMessage {
-    val INVALID_INPUT = "Error: Invalid input"
-    val INCORRECT_CMD_NAME = "Error: Incorrect command name: "
-    val INPUT_ARGS_NOT_EQUAL_TO_TWO = "Error: There must be 2 input arguments"
-    val DIVISION_BY_ZERO = "Error: Division by zero"
+    val INVALID_INPUT               = "Error: Invalid input"
+    val EMPTY_INPUT                 = "Error: Empty input"
+    val INCORRECT_CMD_NAME          = "Error: Incorrect command name"
+    val INPUT_ARGS_ARE_MISSING      = "Error: Input arguments are missing"
+    val INPUT_ARGS_NOT_EQUAL_TO_TWO = "Error: Division must have 2 input arguments"
+    val DIVISION_BY_ZERO            = "Error: Division by zero"
   }
 
   sealed trait Result // adjust Result as required to match requirements
@@ -70,28 +72,37 @@ object ControlStructuresHomework {
     }
   }
 
+  // formats round doubles as integers
+  val formatValue: Double => String = { (d: Double) =>
+    if (d == d.toLong) f"$d%.0f"
+    else s"$d"
+  }
+
   def parseCommand(x: String): Either[ErrorMessage, Command] = {
     // implement this method
     // Implementation hints:
     // You can use String#split, convert to List using .toList, then pattern match on:
     //   case x :: xs => ???
     // Consider how to handle extra whitespace gracefully (without errors).
-    val command = x.split("\\s+").toList
+    val command = x.split("\\s+")
+    val head = command.toList.headOption
 
-    val head = command.headOption
-    
-    val tail = command.tail.map(_.toDoubleOption)
-    if (tail.contains(None)) Left(ErrorMessage(ErrorMessage.INVALID_INPUT))
+    if (head.isEmpty || (command.size == 1 && command(0) == "")) Left(ErrorMessage(ErrorMessage.EMPTY_INPUT))
     else {
-      head match {
-        case Some("divide") =>
-          if (tail.size != 2) Left(ErrorMessage(ErrorMessage.INPUT_ARGS_NOT_EQUAL_TO_TWO))
+
+      val tail = command.toList.tail.map(_.toDoubleOption)
+      if (tail.contains(None)) Left(ErrorMessage(ErrorMessage.INVALID_INPUT))
+      else if (tail.isEmpty) Left(ErrorMessage(ErrorMessage.INPUT_ARGS_ARE_MISSING))
+      else {
+        head match {
+          case Some("divide")   => if (tail.size != 2) Left(ErrorMessage(ErrorMessage.INPUT_ARGS_NOT_EQUAL_TO_TWO))
           else Right(Command.Divide(tail.head.getOrElse(0), tail.last.getOrElse(0)))
-        case Some("sum") => Right(Command.Sum(tail.flatten))
-        case Some("average") => Right(Command.Average(tail.flatten))
-        case Some("min") => Right(Command.Min(tail.flatten))
-        case Some("max") => Right(Command.Max(tail.flatten))
-        case other => Left(ErrorMessage(ErrorMessage.INCORRECT_CMD_NAME + s"${other.getOrElse("Unknown")}"))
+          case Some("sum")      => Right(Command.Sum(tail.flatten))
+          case Some("average")  => Right(Command.Average(tail.flatten))
+          case Some("min")      => Right(Command.Min(tail.flatten))
+          case Some("max")      => Right(Command.Max(tail.flatten))
+          case _                => Left(ErrorMessage(ErrorMessage.INCORRECT_CMD_NAME))
+        }
       }
     }
   }
@@ -100,15 +111,13 @@ object ControlStructuresHomework {
   // invalid operations
   def calculate(x: Command): Either[ErrorMessage, Result] = {
     x match {
-      case Command.Divide(dividend, divisor) =>
-        if (divisor == 0) Left(ErrorMessage(ErrorMessage.DIVISION_BY_ZERO))
-        else Right(Result.Divide(x, (dividend/divisor).toString))
-      case Command.Sum(numbers) => Right(Result.Sum(x, numbers.sum.toString))
-      case Command.Average(numbers) => Right(Result.Average(x, (numbers.sum/numbers.length).toString))
-      case Command.Min(numbers) => Right(Result.Min(x, numbers.min.toString))
-      case Command.Max(numbers) => Right(Result.Max(x, numbers.max.toString))
+      case Command.Divide(dividend, divisor)  => if (divisor == 0) Left(ErrorMessage(ErrorMessage.DIVISION_BY_ZERO))
+                                                 else Right(Result.Divide(x, formatValue(dividend/divisor)))
+      case Command.Sum(numbers)               => Right(Result.Sum(x, formatValue(numbers.sum)))
+      case Command.Average(numbers)           => Right(Result.Average(x, formatValue(numbers.sum/numbers.length)))
+      case Command.Min(numbers)               => Right(Result.Min(x, formatValue(numbers.min)))
+      case Command.Max(numbers)               => Right(Result.Max(x, formatValue(numbers.max)))
     }
-
   }
 
   def renderResult(x: Result): String = {
@@ -124,8 +133,8 @@ object ControlStructuresHomework {
     // implement using a for-comprehension
     val result = for {
       parsedInput <- parseCommand(x)
-      calculatedCommand <- calculate(parsedInput)
-    } yield renderResult(calculatedCommand)
+      calculatedResult <- calculate(parsedInput)
+    } yield renderResult(calculatedResult)
 
     result match {
       case Left(error) => error.value
@@ -135,40 +144,6 @@ object ControlStructuresHomework {
   }
 
   // This `main` method reads lines from stdin, passes each to `process` and outputs the return value to stdout
-//    def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
-  def main(args: Array[String]): Unit = {
-//    val cmd1 = parseCommand("divide 4 5")
-//    val cmd2 = parseCommand("sum 5 5 6 8.5")
-//    val cmd3 = parseCommand("average 4 3 8.5 4")
-//    val cmd4 = parseCommand("min 4 -3 -17")
-//    val cmd5 = parseCommand("max 4 -3 -17")
-//    println(cmd1)
-//    println(cmd2)
-//    println(cmd3)
-//    println(cmd4)
-//    println(cmd5)
-//
-//    println()
-//
-//    val calc1 = calculate(Command.Divide(4,5))
-//    println(calc1)
-//    val calc2 = calculate(Command.Sum(List(5,5,6,8.5)))
-//    println(calc2)
-//    val calc3 = calculate(Command.Average(List(4,3,8.5,4)))
-//    println(calc3)
-//
-//    println()
-
-    val proc1 = process("divide -2 6")
-    println(proc1)
-  println(formatValue(3.4))
-  println(formatValue(3))
-//    println()
-//
-//    val res1 = Result.Divide(Command.Divide(4,5), "0.8")
-//    println(Result.render(res1))
-//    val res2 = Result.Sum(Command.Sum(List(5,5,6,8.5)), "24.5")
-//    println(Result.render(res2))
-  }
+  def main(args: Array[String]): Unit = Source.stdin.getLines() map process foreach println
 }
 
