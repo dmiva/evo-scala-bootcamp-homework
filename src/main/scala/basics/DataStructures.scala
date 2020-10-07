@@ -20,8 +20,6 @@ object DataStructures {
   // Input `Map("a" -> 1, "b" -> 2, "c" -> 4, "d" -> 1, "e" -> 0, "f" -> 2, "g" -> 2)` should result in
   // output `List(Set("e") -> 0, Set("a", "d") -> 1, Set("b", "f", "g") -> 2, Set("c") -> 4)`.
   def sortConsideringEqualValues[T](map: Map[T, Int]): List[(Set[T], Int)] = {
-    if (map.isEmpty) List()
-    else
     map
     // 1. Group keys in collection (Map), whose key-value pairs have identical values
     .groupBy { case (_, value) => value }
