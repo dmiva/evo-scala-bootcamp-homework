@@ -27,7 +27,7 @@ object DataStructures {
     .groupBy { case (_, value) => value }
     // 2. Change values in key-value pairs from Map of tuples to Set of keys
     .map { case (key, value) => key -> value.keys.toSet }
-    // 3. Exchange keys with values
+    // 3. Swap keys and values
     .map { case (key, value) => (value, key) }
     // 4. Convert 'outer' collection from Map to List
     .toList
