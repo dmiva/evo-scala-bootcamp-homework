@@ -31,7 +31,7 @@ object DataStructures {
     .map { case (key, value) => (value, key) }
     // 4. Convert 'outer' collection from Map to List
     .toList
-    // 5. Sort elements in list by their values
+    // 5. Sort elements in list of tuples by tuple's second element's value
     .sortBy { case (_, value) => value }
   }
 
