@@ -23,5 +23,43 @@ object AlgebraicDataTypes {
   // https://en.wikipedia.org/wiki/Algebraic_data_type
 
 
+  final case class Card private (rank: Rank, suit: Suit)
+
+  // 2. Rank
+  sealed trait Rank
+  case object Two extends Rank
+  case object Three extends Rank
+  case object Four extends Rank
+  case object Five extends Rank
+  case object Six extends Rank
+  case object Seven extends Rank
+  case object Eight extends Rank
+  case object Nine extends Rank
+  case object Ten extends Rank
+  case object Jack extends Rank
+  case object Queen extends Rank
+  case object King extends Rank
+  case object Ace extends Rank
+
+  def main(args: Array[String]): Unit = {
+    val suit1 = Suit.create('g')
+    val suit2 = Suit.create('c')
+    println((suit1))
+    println((suit2))
+
+    val rank1 = Rank.create('R')
+    val rank2 = Rank.create('J')
+    println((rank1))
+    println((rank2))
+
+    val card1 = for {
+      suit <- Suit.create('4')
+      rank <- Rank.create('T')
+    } yield Card(Rank.create('a'), suit)
+
+
+
+
+  }
 
 }
