@@ -1,0 +1,5 @@
+package adt
+
+object ErrorMessage {
+
+}
