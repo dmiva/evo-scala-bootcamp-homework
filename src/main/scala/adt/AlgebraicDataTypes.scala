@@ -23,31 +23,6 @@ object AlgebraicDataTypes {
   // https://en.wikipedia.org/wiki/Algebraic_data_type
 
 
-
-//  object Card {
-//    def parse(str: String): Card = {
-//
-//    }
-//  }
-
-final case class Card(rank: Rank, suit: Suit)
-
-  sealed trait GameType {
-    def handLength: Int
-  }
-  object GameType {
-    final case object Texas extends GameType {
-      override def handLength: Int = 2
-    }
-    final case object Omaha extends GameType {
-      override def handLength: Int = 4
-    }
-  }
-
-
-
-  final case class Board(cards: List[Card])
-
   final case class TestCase(board: Board, hands: List[Hand])
   object TestCase {
     def parse(input: String): TestCase = ???
@@ -93,6 +68,22 @@ final case class Card(rank: Rank, suit: Suit)
     val hand2 = Hand.create(List(Card(Rank.Eight, Suit.Clubs),Card(Rank.Eight, Suit.Clubs)), GameType.Texas)
     println(hand2)
 
+    // Correct
+    val hand3 = Hand.create(List(Card(Rank.Eight, Suit.Clubs),Card(Rank.Eight, Suit.Diamonds)), GameType.Texas)
+    println(hand3)
+
+    // Incorrect length
+    val board1 = Board.create(List(Card(Rank.Eight, Suit.Clubs)))
+    println(board1)
+
+    // Duplicates
+    val board2 = Board.create(List(Card(Rank.Eight, Suit.Diamonds),Card(Rank.Eight, Suit.Diamonds),Card(Rank.Nine, Suit.Clubs),Card(Rank.Ten, Suit.Spades),Card(Rank.Eight, Suit.Hearts)))
+    println(board2)
+
+    // Correct
+    val board3 = Board.create(List(Card(Rank.Eight, Suit.Diamonds),Card(Rank.Eight, Suit.Clubs),Card(Rank.Nine, Suit.Clubs),Card(Rank.Ten, Suit.Spades),Card(Rank.Eight, Suit.Hearts)))
+    println(board3)
+
     val card2 = for {
       rank <- Rank.create('2')
       suit <- Suit.create('f')
@@ -101,25 +92,6 @@ final case class Card(rank: Rank, suit: Suit)
 
     println(s"card2 $card2")
 
-    val dup = List(Card(Rank.Two, Suit.Clubs),Card(Rank.Four, Suit.Clubs))
-    val dup1 = dup.groupBy(identity).collect {
-      case (card, listOfSameCards) if listOfSameCards.lengthIs > 1 => card
-    }
-
-    val dups = dup.distinctBy(identity)
-    println(dup1)
-    println(dups)
-
-    def duplicates[T](list: List[T]): Iterable[T] = {
-      list.groupBy(identity).collect {
-        case (t, values) if values.lengthIs > 1 => t
-      }
-    }
-
-//    val card1 = for {
-//      suit <- Suit.create('4')
-//      rank <- Rank.create('T')
-//    } yield Card(Rank.create('a'), suit)
 
   }
 

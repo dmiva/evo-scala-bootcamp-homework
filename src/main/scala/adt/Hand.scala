@@ -1,14 +1,12 @@
 package adt
 
-import adt.AlgebraicDataTypes.{Card, GameType}
-
 sealed abstract case class Hand private (cards: List[Card], gameType: GameType)
 object Hand {
   def create(cards: List[Card], gameType: GameType): Either[String, Hand] = {
     val duplicates = listOfDuplicates(cards)
 
     (cards, gameType) match {
-      case _ if cards.length != gameType.handLength => Left(s"Hand must contain ${gameType.handLength} cards, but found only ${cards.length}")
+      case _ if cards.length != gameType.handLength => Left(s"Hand must contain ${gameType.handLength} cards, but found ${cards.length}")
       case _ if duplicates.nonEmpty                 => Left(s"Hand contain duplicate cards: ${duplicates.mkString(", ")}")
       case _                                        => Right(new Hand(cards, gameType) {})
     }
