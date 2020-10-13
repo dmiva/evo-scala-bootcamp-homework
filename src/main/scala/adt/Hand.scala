@@ -1,5 +1,7 @@
 package adt
 
+import scala.annotation.tailrec
+
 sealed abstract case class Hand private (cards: List[Card], gameType: GameType)
 object Hand {
   def create(cards: List[Card], gameType: GameType): Either[String, Hand] = {
@@ -11,6 +13,9 @@ object Hand {
       case _                                        => Right(new Hand(cards, gameType) {})
     }
   }
+
+  //@tailrec
+  //def cards: List[Card] = cards
 
   private def listOfDuplicates[T](list: List[T]): Iterable[T] = {
     list.groupBy(identity).collect {

@@ -1,5 +1,0 @@
-package adt
-
-object ErrorMessage {
-
-}

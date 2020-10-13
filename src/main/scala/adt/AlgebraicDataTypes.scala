@@ -1,5 +1,6 @@
 package adt
 
+
 object AlgebraicDataTypes {
   // Homework. Define all algebraic data types, which would be needed to implement “Hold’em Hand Strength”
   // task you completed to join the bootcamp. Use your best judgement about particular data types to include
@@ -23,74 +24,94 @@ object AlgebraicDataTypes {
   // https://en.wikipedia.org/wiki/Algebraic_data_type
 
 
-  final case class TestCase(board: Board, hands: List[Hand])
-  object TestCase {
-    def parse(input: String): TestCase = ???
-  }
-
-  final case class TestResult(board: Board, hands: List[Hand])
+  // It ended up being verbose...
+  
+  final case class TestResult(testCase: TestCase, handsRanked: List[Hand])
 
   sealed trait PokerCombination
   object PokerCombination {
-    final case class HighCard(cards: List[Card]) extends PokerCombination
-    final case class OnePair(cards: List[Card]) extends PokerCombination
-    final case class TwoPairs(cards: List[Card]) extends PokerCombination
-    final case class ThreeOfAKind(cards: List[Card]) extends PokerCombination
-    final case class Straight(cards: List[Card]) extends PokerCombination
-    final case class Flush(cards: List[Card]) extends PokerCombination
-    final case class FullHouse(cards: List[Card]) extends PokerCombination
-    final case class FourOfAKind(cards: List[Card]) extends PokerCombination
-    final case class StraightFlush(cards: List[Card]) extends PokerCombination
+    final case class HighCard(cards: List[Card]) extends PokerCombination     // defines by 5 cards in asc. order
+    final case class Pair(cards: List[Card]) extends PokerCombination         // defines by Rank of 2 equal cards + 3 highest cards
+    final case class TwoPairs(cards: List[Card]) extends PokerCombination     // defines by two Ranks of 2 equal cards + 1 highest card
+    final case class ThreeOfAKind(cards: List[Card]) extends PokerCombination // defines by Rank of 3 equal cards + 2 cards
+    final case class Straight(cards: List[Card]) extends PokerCombination     // defines by Rank of highest card in sequence
+    final case class Flush(cards: List[Card]) extends PokerCombination        // defines by sequence of 5 cards with equal suit
+    final case class FullHouse(cards: List[Card]) extends PokerCombination    // defines by Rank of 3 equal cards + Rank of 2 equal cards
+    final case class FourOfAKind(cards: List[Card]) extends PokerCombination  // defines by Rank of 4 equal cards + 1 highest card
+    final case class StraightFlush(cards: List[Card]) extends PokerCombination// defines by Rank of highest card in sequence with equal suit
   }
 
 
   def main(args: Array[String]): Unit = {
+    import Rank._
+    import Suit._
 
     val suit1 = Suit.create('d')
     val suit2 = Suit.create('d')
-    println((suit1))
-    println((suit2))
+    println(suit1)
+    println(suit2)
 //    val rank3 = Rank('r')
     val rank1 = Rank.create('R')
     val rank2 = Rank.create('J')
-    println((rank1))
-    println((rank2))
+    println(rank1)
+    println(rank2)
     val rank5 = Rank.create('a')
-//    val card1 = Card(Rank.Two, Suit.Diamonds)
-//    println(card1)
 
 
     // Incorrect length
-    val hand1 = Hand.create(List(Card(Rank.Eight, Suit.Clubs)), GameType.Omaha)
+    val hand1 = Hand.create(
+      List(
+        Card(Eight, Clubs),
+        Card(Nine, Clubs),
+        Card(Ten, Clubs)),
+      GameType.Omaha
+    )
     println(hand1)
 
     // Duplicates
-    val hand2 = Hand.create(List(Card(Rank.Eight, Suit.Clubs),Card(Rank.Eight, Suit.Clubs)), GameType.Texas)
+    val hand2 = Hand.create(List(Card(Eight, Clubs),Card(Eight, Clubs)), GameType.Texas)
     println(hand2)
 
     // Correct
-    val hand3 = Hand.create(List(Card(Rank.Eight, Suit.Clubs),Card(Rank.Eight, Suit.Diamonds)), GameType.Texas)
+    val hand3 = Hand.create(List(Card(Eight, Clubs),Card(Eight, Diamonds)), GameType.Texas)
     println(hand3)
 
+    // Correct
+    val hand4 = Hand.create(List(Card(Jack, Clubs),Card(Eight, Diamonds)), GameType.Texas)
+    println(hand4)
+
+    // Correct
+    val hand5 = Hand.create(List(Card(Ace, Hearts),Card(Eight, Clubs)), GameType.Texas)
+    println(hand5)
+
     // Incorrect length
-    val board1 = Board.create(List(Card(Rank.Eight, Suit.Clubs)))
+    val board1 = Board.create(List(Card(Eight, Clubs)))
     println(board1)
 
     // Duplicates
-    val board2 = Board.create(List(Card(Rank.Eight, Suit.Diamonds),Card(Rank.Eight, Suit.Diamonds),Card(Rank.Nine, Suit.Clubs),Card(Rank.Ten, Suit.Spades),Card(Rank.Eight, Suit.Hearts)))
+    val board2 = Board.create(List(Card(Eight, Diamonds),Card(Eight, Diamonds),Card(Nine, Clubs),Card(Ten, Spades),Card(Eight, Hearts)))
     println(board2)
 
     // Correct
-    val board3 = Board.create(List(Card(Rank.Eight, Suit.Diamonds),Card(Rank.Eight, Suit.Clubs),Card(Rank.Nine, Suit.Clubs),Card(Rank.Ten, Suit.Spades),Card(Rank.Eight, Suit.Hearts)))
+    val board3 = Board.create(
+      List(
+        Card(Eight, Diamonds),
+        Card(Eight, Clubs),
+        Card(Nine, Clubs),
+        Card(Ten, Spades),
+        Card(Eight, Hearts)
+      )
+    )
     println(board3)
 
-    val card2 = for {
-      rank <- Rank.create('2')
-      suit <- Suit.create('f')
-
-    } yield Card(rank, suit)
-
-    println(s"card2 $card2")
+    // Duplicates in board and hands
+    val testCase1 = for {
+      board <- board3
+      handA <- hand1
+      handB <- hand4
+      handC <- hand5
+    } yield TestCase.create(board, List(handA, handB, handC), GameType.Texas)
+    println(testCase1)
 
 
   }

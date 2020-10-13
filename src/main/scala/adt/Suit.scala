@@ -17,11 +17,13 @@ object Suit {
   }
 }
 
-//sealed abstract case class Suit private(value: Char)
+// Alternative using value class (does not compiles due to incompatibility with existing solution)
+//final case class Suit private (value: Char) extends AnyVal
 //object Suit {
 //  def create(value: Char): Either[String, Suit] = value match {
-//    case 'c' | 'd' | 'h' | 's' => Right(new Suit(value) {})
-//    case _ => Left(s"Suit symbol not correct: '$value'")
+//        case 'c' | 'd' | 'h' | 's' => Right(Suit(value))
+//        case _   => Left(s"Suit symbol '$value' is not valid.")
 //  }
 //}
+
 

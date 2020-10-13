@@ -35,11 +35,13 @@ object Rank {
   }
 }
 
-//sealed abstract case class Rank private(value: Char)
+// Alternative using value class (does not compiles due to incompatibility with existing solution)
+//final case class Rank private(value: Char) extends AnyVal
 //object Rank {
 //  def create(value: Char): Either[String, Rank] = value match {
 //    case '2' | '3' | '4' | '5' | '6' |
 //         '7' | '8' | '9' | 'T' | 'J' |
-//         'Q' | 'K' | 'A'    => Right(new Rank(value) {})
-//    case _                  => Left(s"Rank symbol not correct: '$value'")
+//         'Q' | 'K' | 'A'                => Right(Rank(value))
+//    case _                              => Left(s"Rank symbol not correct: '$value'")
 //  }
+//}

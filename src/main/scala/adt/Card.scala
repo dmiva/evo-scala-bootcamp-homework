@@ -2,4 +2,8 @@ package adt
 
 final case class Card(rank: Rank, suit: Suit)
 
-// No checks, because rank and suit are constructed correctly
+object Card {
+  def create(input: String): Card = ???
+}
+
+// No other checks
