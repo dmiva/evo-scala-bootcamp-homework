@@ -29,6 +29,7 @@ object AlgebraicDataTypes {
   final case class TestResult(testCase: TestCase, handsRanked: List[Hand])
 
   sealed trait PokerCombination
+  // TODO: Add hand strength value
   object PokerCombination {
     final case class HighCard(cards: List[Card]) extends PokerCombination     // defines by 5 cards in asc. order
     final case class Pair(cards: List[Card]) extends PokerCombination         // defines by Rank of 2 equal cards + 3 highest cards

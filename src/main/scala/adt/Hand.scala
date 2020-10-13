@@ -14,9 +14,6 @@ object Hand {
     }
   }
 
-  //@tailrec
-  //def cards: List[Card] = cards
-
   private def listOfDuplicates[T](list: List[T]): Iterable[T] = {
     list.groupBy(identity).collect {
       case (t, values) if values.lengthIs > 1 => t
