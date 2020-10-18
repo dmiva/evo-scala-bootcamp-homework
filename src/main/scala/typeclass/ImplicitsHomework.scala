@@ -34,18 +34,7 @@ object ImplicitsHomework {
 
     object syntax {
       implicit class GetSizeScoreOps[T: GetSizeScore](inner: T) { //implement the syntax!
-//      implicit class GetSizeScoreOps[T](inner: T) {
-//        def sizeScore(implicit g: GetSizeScore[T]): SizeScore = g.apply(inner)
         def sizeScore: SizeScore = implicitly[GetSizeScore[T]].apply(inner)
-//          inner match {
-//          case _: Byte => 1
-//          case _: Char => 2
-//          case _: Int  => 4
-//          case _: Long => 8
-//          case s: String => 12 + s.length * 2
-////          case list: List[T] => 12 + list.map(x => x.sizeScore).sum
-////          case list: List[T] =>
-//        }
       }
     }
 
@@ -72,7 +61,7 @@ object ImplicitsHomework {
 
       def put(key: K, value: V): Unit = {
         val sizeScoreOfNewElem = key.sizeScore + value.sizeScore
-        val sizeScoreOfMap = map.map(elems => elems._1.sizeScore + elems._2.sizeScore).sum
+        val sizeScoreOfMap = map.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
 
         if ((sizeScoreOfNewElem + sizeScoreOfMap) <= maxSizeScore) {
           map.put(key, value)
@@ -144,18 +133,6 @@ object ImplicitsHomework {
       If you struggle with writing generic instances for Iterate and Iterate2, start by writing instances for
       List and other collections and then replace those with generic instances.
        */
-
-//      implicit val getSizeScore: GetSizeScore[T] = {
-//        case _: Byte => 1
-//        case _: Char => 2
-//        case _: Int => 4
-//        case _: Long => 8
-//        case x: String => 12 + x.length * 2
-//        case x => x.sizeScore
-//      }
-
-//      implicit def GetSizeScoreF[F[T: GetSizeScore]]: GetSizeScore[_] = (value: F[_]) => 4
-
       implicit val byteSizeScore: GetSizeScore[Byte] = (_: Byte) => 1
       implicit val charSizeScore: GetSizeScore[Char] = (_: Char) => 2
       implicit val intSizeScore: GetSizeScore[Int] = (_: Int) => 4
