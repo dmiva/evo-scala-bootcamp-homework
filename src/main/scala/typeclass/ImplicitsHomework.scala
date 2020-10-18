@@ -144,7 +144,7 @@ object ImplicitsHomework {
       If you struggle with writing generic instances for Iterate and Iterate2, start by writing instances for
       List and other collections and then replace those with generic instances.
        */
-//      implicit def intSizeScore[T]: GetSizeScore[T] = (_: T) => 6
+
 //      implicit val getSizeScore: GetSizeScore[T] = {
 //        case _: Byte => 1
 //        case _: Char => 2
@@ -153,11 +153,6 @@ object ImplicitsHomework {
 //        case x: String => 12 + x.length * 2
 //        case x => x.sizeScore
 //      }
-
-
-//
-//      implicit def arraySizeScore[T: GetSizeScore]: GetSizeScore[Array[T]] = (value: Array[T]) =>
-//        value.foldLeft(12)((acc, e) => acc + e.sizeScore)
 
 //      implicit def GetSizeScoreF[F[T: GetSizeScore]]: GetSizeScore[_] = (value: F[_]) => 4
 
@@ -175,17 +170,6 @@ object ImplicitsHomework {
       implicit def packedMultiMap[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[PackedMultiMap[K,V]] = (m: PackedMultiMap[K,V]) => {
         12 + m.inner.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
       }
-
-//      implicit val intSizeScore: GetSizeScore[Int] = (_: Int) => 4
-
-//      def getScore[T](in: T): SizeScore = in match {
-//        case _: Byte => 1
-//        case _: Char => 2
-//        case _: Int => 4
-//        case _: Long => 8
-//        case x: String => 12 + x.length * 2
-//        case x: Array[T] => 12 + x.collect(y => 6).sum
-//      }
 
     }
   }
@@ -219,6 +203,28 @@ object ImplicitsHomework {
     /*
     Return an implementation based on MutableBoundedCache[Long, Twit]
      */
-    def createTwitCache(maxSizeScore: SizeScore): TwitCache = ???
+    object TwitCache {
+      import instances._
+      import syntax._
+
+      implicit val fbiNoteSizeScore: GetSizeScore[FbiNote] = (f: FbiNote) =>
+        f.month.sizeScore + f.favouriteChar.sizeScore + f.watchedPewDiePieTimes.sizeScore
+
+      implicit val twitSizeScore: GetSizeScore[Twit] = (t: Twit) => {
+        t.id.sizeScore +
+          t.userId.sizeScore +
+          t.hashTags.sizeScore +
+          t.attributes.sizeScore +
+          t.fbiNotes.sizeScore
+      }
+    }
+
+    def createTwitCache(maxSizeScore: SizeScore): TwitCache = new TwitCache {
+      import TwitCache._
+      import instances._
+      val cache = new MutableBoundedCache[Long, Twit](maxSizeScore)
+      override def put(twit: Twit): Unit = cache.put(twit.id, twit)
+      override def get(id: Long): Option[Twit] = cache.get(id)
+    }
   }
 }
