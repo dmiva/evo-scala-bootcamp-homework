@@ -33,9 +33,10 @@ object ImplicitsHomework {
     }
 
     object syntax {
-//      implicit class GetSizeScoreOps[T: GetSizeScore](inner: T) { //implement the syntax!
-      implicit class GetSizeScoreOps[T](inner: T) {
-        def sizeScore(implicit g: GetSizeScore[T]): SizeScore = g.apply(inner)
+      implicit class GetSizeScoreOps[T: GetSizeScore](inner: T) { //implement the syntax!
+//      implicit class GetSizeScoreOps[T](inner: T) {
+//        def sizeScore(implicit g: GetSizeScore[T]): SizeScore = g.apply(inner)
+        def sizeScore: SizeScore = implicitly[GetSizeScore[T]].apply(inner)
 //          inner match {
 //          case _: Byte => 1
 //          case _: Char => 2
@@ -62,15 +63,43 @@ object ImplicitsHomework {
      */
     final class MutableBoundedCache[K: GetSizeScore, V: GetSizeScore](maxSizeScore: SizeScore) {
       //with this you can use .sizeScore syntax on keys and values
+      import syntax._
 
       /*
       mutable.LinkedHashMap is a mutable map container which preserves insertion order - this might be useful!
        */
       private val map = mutable.LinkedHashMap.empty[K, V]
 
-      def put(key: K, value: V): Unit = ???
+      def put(key: K, value: V): Unit = {
+        //        val sizeScoreOfNewElem = key.sizeScore + value.sizeScore
+        //        val sizeScoreOfMap = map.map(elems => elems._1.sizeScore + elems._2.sizeScore).sum
+        //        map.put(key, value)
+        //        println(getMapScore(map))
+        evaluateInsertion(key, value, map)
 
-      def get(key: K): Option[V] = ???
+        //        if ((sizeScoreOfMap + sizeScoreOfNewElem) <= maxSizeScore)
+        //      }
+        def evaluateInsertion(key: K, value: V, m: mutable.Map[K, V]): Unit = {
+          val sizeScoreOfNewElem = key.sizeScore + value.sizeScore
+          val sizeScoreOfMap = getMapScore(map)
+
+          if ((sizeScoreOfNewElem + sizeScoreOfMap) <= maxSizeScore) {
+            map.put(key, value)
+            println(s"inserted ($key,$value)")
+          }
+          else {
+            println(s"removed (${map.head._1},${map.head._2})")
+            map.remove(map.head._1)
+            evaluateInsertion(key, value, map)
+          }
+        }
+
+        def getMapScore(m: mutable.Map[K, V]): SizeScore = {
+          m.map(elems => elems._1.sizeScore + elems._2.sizeScore).sum
+        }
+      }
+
+      def get(key: K): Option[V] = map.get(key)
     }
 
     /**
@@ -99,6 +128,7 @@ object ImplicitsHomework {
 
     object instances {
 
+      import syntax._
       implicit val iterableOnceIterate: Iterate[Iterable] = new Iterate[Iterable] {
         override def iterator[T](f: Iterable[T]): Iterator[T] = f.iterator
       }
@@ -108,7 +138,17 @@ object ImplicitsHomework {
       }
       //Provide Iterate2 instances for Map and PackedMultiMap!
       //if the code doesn't compile while you think it should - sometimes full rebuild helps!
-//      implicit val
+
+      implicit val mapIterate: Iterate2[Map] = new Iterate2[Map] {
+        override def iterator1[T, S](f: Map[T, S]): Iterator[T] = f.keysIterator
+        override def iterator2[T, S](f: Map[T, S]): Iterator[S] = f.valuesIterator
+      }
+
+      implicit val packedMultiMapIterate: Iterate2[PackedMultiMap] = new Iterate2[PackedMultiMap] {
+        override def iterator1[T, S](f: PackedMultiMap[T, S]): Iterator[T] = f.inner.toMap.keysIterator
+        override def iterator2[T, S](f: PackedMultiMap[T, S]): Iterator[S] = f.inner.toMap.valuesIterator
+      }
+
       /*
       replace this big guy with proper implicit instances for types:
       - Byte, Char, Int, Long
@@ -120,10 +160,48 @@ object ImplicitsHomework {
       If you struggle with writing generic instances for Iterate and Iterate2, start by writing instances for
       List and other collections and then replace those with generic instances.
        */
-//      implicit def stubGetSizeScore[T]: GetSizeScore[T] = (_: T) => 42
-      implicit def intSizeScore[Int]: GetSizeScore[Int] = (_: Int) => 4
+//      implicit def intSizeScore[T]: GetSizeScore[T] = (_: T) => 6
+//      implicit val getSizeScore: GetSizeScore[T] = {
+//        case _: Byte => 1
+//        case _: Char => 2
+//        case _: Int => 4
+//        case _: Long => 8
+//        case x: String => 12 + x.length * 2
+//        case x => x.sizeScore
+//      }
 
-      implicit val byteSizeScore: GetSizeScore[String] = (value: String) => 12 + value.length * 2
+
+//
+//      implicit def arraySizeScore[T: GetSizeScore]: GetSizeScore[Array[T]] = (value: Array[T]) =>
+//        value.foldLeft(12)((acc, e) => acc + e.sizeScore)
+
+//      implicit def GetSizeScoreF[F[T: GetSizeScore]]: GetSizeScore[_] = (value: F[_]) => 4
+
+      implicit val byteSizeScore: GetSizeScore[Byte] = (_: Byte) => 1
+      implicit val charSizeScore: GetSizeScore[Char] = (_: Char) => 2
+      implicit val intSizeScore: GetSizeScore[Int] = (_: Int) => 4
+      implicit val longSizeScore: GetSizeScore[Long] = (_: Long) => 8
+      implicit val stringSizeScore: GetSizeScore[String] = (s: String) => 12 + (s.length * 2)
+      implicit def arraySizeScore[T: GetSizeScore]: GetSizeScore[Array[T]] = (a: Array[T]) => 12 + a.map(x => x.sizeScore).sum
+      implicit def listSizeScore[T: GetSizeScore]: GetSizeScore[List[T]] = (l: List[T]) => 12 + l.map(x => x.sizeScore).sum
+      implicit def vectorSizeScore[T: GetSizeScore]: GetSizeScore[Vector[T]] = (v: Vector[T]) => 12 + v.map(x => x.sizeScore).sum
+      implicit def mapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[Map[K,V]] = (m: Map[K,V]) => {
+        12 + m.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
+      }
+      implicit def packedMultiMap[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[PackedMultiMap[K,V]] = (m: PackedMultiMap[K,V]) => {
+        12 + m.inner.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
+      }
+
+//      implicit val intSizeScore: GetSizeScore[Int] = (_: Int) => 4
+
+//      def getScore[T](in: T): SizeScore = in match {
+//        case _: Byte => 1
+//        case _: Char => 2
+//        case _: Int => 4
+//        case _: Long => 8
+//        case x: String => 12 + x.length * 2
+//        case x: Array[T] => 12 + x.collect(y => 6).sum
+//      }
 
     }
   }
