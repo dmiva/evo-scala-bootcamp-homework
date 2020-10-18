@@ -71,31 +71,15 @@ object ImplicitsHomework {
       private val map = mutable.LinkedHashMap.empty[K, V]
 
       def put(key: K, value: V): Unit = {
-        //        val sizeScoreOfNewElem = key.sizeScore + value.sizeScore
-        //        val sizeScoreOfMap = map.map(elems => elems._1.sizeScore + elems._2.sizeScore).sum
-        //        map.put(key, value)
-        //        println(getMapScore(map))
-        evaluateInsertion(key, value, map)
+        val sizeScoreOfNewElem = key.sizeScore + value.sizeScore
+        val sizeScoreOfMap = map.map(elems => elems._1.sizeScore + elems._2.sizeScore).sum
 
-        //        if ((sizeScoreOfMap + sizeScoreOfNewElem) <= maxSizeScore)
-        //      }
-        def evaluateInsertion(key: K, value: V, m: mutable.Map[K, V]): Unit = {
-          val sizeScoreOfNewElem = key.sizeScore + value.sizeScore
-          val sizeScoreOfMap = getMapScore(map)
-
-          if ((sizeScoreOfNewElem + sizeScoreOfMap) <= maxSizeScore) {
-            map.put(key, value)
-            println(s"inserted ($key,$value)")
-          }
-          else {
-            println(s"removed (${map.head._1},${map.head._2})")
-            map.remove(map.head._1)
-            evaluateInsertion(key, value, map)
-          }
+        if ((sizeScoreOfNewElem + sizeScoreOfMap) <= maxSizeScore) {
+          map.put(key, value)
         }
-
-        def getMapScore(m: mutable.Map[K, V]): SizeScore = {
-          m.map(elems => elems._1.sizeScore + elems._2.sizeScore).sum
+        else {
+          map.remove(map.head._1)
+          put(key, value)
         }
       }
 
