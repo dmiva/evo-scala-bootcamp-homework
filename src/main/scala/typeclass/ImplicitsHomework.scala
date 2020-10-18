@@ -144,10 +144,9 @@ object ImplicitsHomework {
       implicit def mapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[Map[K,V]] = (m: Map[K,V]) => {
         12 + m.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
       }
-      implicit def packedMultiMap[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[PackedMultiMap[K,V]] = (m: PackedMultiMap[K,V]) => {
+      implicit def packedMultiMapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[PackedMultiMap[K,V]] = (m: PackedMultiMap[K,V]) => {
         12 + m.inner.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
       }
-
     }
   }
 
