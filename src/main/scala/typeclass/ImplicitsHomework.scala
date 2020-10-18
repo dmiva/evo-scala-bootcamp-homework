@@ -33,8 +33,18 @@ object ImplicitsHomework {
     }
 
     object syntax {
-      implicit class GetSizeScoreOps[T: GetSizeScore](inner: T) {
-        def sizeScore: SizeScore = ??? //implement the syntax!
+//      implicit class GetSizeScoreOps[T: GetSizeScore](inner: T) { //implement the syntax!
+      implicit class GetSizeScoreOps[T](inner: T) {
+        def sizeScore(implicit g: GetSizeScore[T]): SizeScore = g.apply(inner)
+//          inner match {
+//          case _: Byte => 1
+//          case _: Char => 2
+//          case _: Int  => 4
+//          case _: Long => 8
+//          case s: String => 12 + s.length * 2
+////          case list: List[T] => 12 + list.map(x => x.sizeScore).sum
+////          case list: List[T] =>
+//        }
       }
     }
 
@@ -98,7 +108,7 @@ object ImplicitsHomework {
       }
       //Provide Iterate2 instances for Map and PackedMultiMap!
       //if the code doesn't compile while you think it should - sometimes full rebuild helps!
-
+//      implicit val
       /*
       replace this big guy with proper implicit instances for types:
       - Byte, Char, Int, Long
@@ -110,7 +120,11 @@ object ImplicitsHomework {
       If you struggle with writing generic instances for Iterate and Iterate2, start by writing instances for
       List and other collections and then replace those with generic instances.
        */
-      implicit def stubGetSizeScore[T]: GetSizeScore[T] = (_: T) => 42
+//      implicit def stubGetSizeScore[T]: GetSizeScore[T] = (_: T) => 42
+      implicit def intSizeScore[Int]: GetSizeScore[Int] = (_: Int) => 4
+
+      implicit val byteSizeScore: GetSizeScore[String] = (value: String) => 12 + value.length * 2
+
     }
   }
 
