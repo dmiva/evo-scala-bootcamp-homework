@@ -138,15 +138,35 @@ object ImplicitsHomework {
       implicit val intSizeScore: GetSizeScore[Int] = (_: Int) => 4
       implicit val longSizeScore: GetSizeScore[Long] = (_: Long) => 8
       implicit val stringSizeScore: GetSizeScore[String] = (s: String) => 12 + (s.length * 2)
-      implicit def arraySizeScore[T: GetSizeScore]: GetSizeScore[Array[T]] = (a: Array[T]) => 12 + a.map(x => x.sizeScore).sum
-      implicit def listSizeScore[T: GetSizeScore]: GetSizeScore[List[T]] = (l: List[T]) => 12 + l.map(x => x.sizeScore).sum
-      implicit def vectorSizeScore[T: GetSizeScore]: GetSizeScore[Vector[T]] = (v: Vector[T]) => 12 + v.map(x => x.sizeScore).sum
-      implicit def mapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[Map[K,V]] = (m: Map[K,V]) => {
-        12 + m.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
+
+// replaced by genericIterateSizeScore
+//      implicit def arraySizeScore[T: GetSizeScore]: GetSizeScore[Array[T]] = (a: Array[T]) => 12 + a.map(x => x.sizeScore).sum
+//      implicit def listSizeScore[T: GetSizeScore]: GetSizeScore[List[T]] = (l: List[T]) => 12 + l.map(x => x.sizeScore).sum
+//      implicit def vectorSizeScore[T: GetSizeScore]: GetSizeScore[Vector[T]] = (v: Vector[T]) => 12 + v.map(x => x.sizeScore).sum
+
+// replaced by genericIterate2SizeScore
+//      implicit def mapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[Map[K,V]] = (m: Map[K,V]) => {
+//        12 + m.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
+//      }
+//      implicit def packedMultiMapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[PackedMultiMap[K,V]] = (m: PackedMultiMap[K,V]) => {
+//        12 + m.inner.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
+//      }
+
+// intermediate attempt to generalize lists
+//      import cats.Foldable
+//      implicit def genericSizeScore[F[_]: Foldable, T: GetSizeScore]: GetSizeScore[F[T]] = new GetSizeScore[F[T]] {
+//        val foldable = implicitly[Foldable[F]]
+//        override def apply(value: F[T]): SizeScore = foldable.foldLeft(value, 12)((acc, elem) => acc + elem.sizeScore)
+//      }
+
+      implicit def genericIterateSizeScore[F[_]: Iterate, T: GetSizeScore]: GetSizeScore[F[T]] = (value: F[T]) =>
+        12 + implicitly[Iterate[F]].iterator(value).map(x => x.sizeScore).sum
+
+      implicit def genericIterate2SizeScore[F[_,_]: Iterate2, K: GetSizeScore, V: GetSizeScore]: GetSizeScore[F[K,V]] = (value: F[K, V]) => {
+        val it = implicitly[Iterate2[F]]
+        12 + it.iterator1(value).map(x => x.sizeScore).sum + it.iterator2(value).map(x => x.sizeScore).sum
       }
-      implicit def packedMultiMapSizeScore[K: GetSizeScore, V: GetSizeScore]: GetSizeScore[PackedMultiMap[K,V]] = (m: PackedMultiMap[K,V]) => {
-        12 + m.inner.map(elem => elem._1.sizeScore + elem._2.sizeScore).sum
-      }
+
     }
   }
 
