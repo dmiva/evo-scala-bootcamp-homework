@@ -6,7 +6,9 @@ import java.time.{LocalDate, ZonedDateTime}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
+import cats.syntax.either._
 import io.circe
+import io.circe.{Decoder, Encoder}
 import io.circe.parser._
 import io.circe.generic.JsonCodec
 import org.scalatest.EitherValues
@@ -53,10 +55,18 @@ class HomeworkSpec extends AnyWordSpec with Matchers with EitherValues {
 }
 
 object HomeworkSpec {
-  @JsonCodec final case class TeamTotals(assists: String, fullTimeoutRemaining: String, plusMinus: String)
+//  @JsonCodec final case class TeamTotals(assists: String, fullTimeoutRemaining: String, plusMinus: String)
+  @JsonCodec final case class TeamTotals(assists: String, full_timeout_remaining: String, plusMinus: String)
   @JsonCodec final case class TeamBoxScore(totals: TeamTotals)
   @JsonCodec final case class GameStats(hTeam: TeamBoxScore, vTeam: TeamBoxScore)
   @JsonCodec final case class PrevMatchup(gameDate: LocalDate, gameId: String)
+
+  val dateString = DateTimeFormatter.BASIC_ISO_DATE
+  implicit val encodeLocalDate: Encoder[LocalDate] = Encoder.encodeString.contramap[LocalDate](_.format(dateString))
+  implicit val decodeLocalDate: Decoder[LocalDate] = Decoder.decodeString.emap { str =>
+    Either.catchNonFatal(LocalDate.parse(str, dateString)).leftMap(err => "Instant: " + err.getMessage)
+  }
+
   @JsonCodec final case class BoxScore(
                                         basicGameData: Game,
                                         previousMatchup: PrevMatchup,
