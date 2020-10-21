@@ -58,7 +58,7 @@ object HomeworkSpec {
 //  @JsonCodec final case class TeamTotals(assists: String, fullTimeoutRemaining: String, plusMinus: String)
   @JsonCodec final case class TeamTotals(assists: String, full_timeout_remaining: String, plusMinus: String)
   @JsonCodec final case class TeamBoxScore(totals: TeamTotals)
-  @JsonCodec final case class GameStats(hTeam: TeamBoxScore, vTeam: TeamBoxScore)
+  @JsonCodec final case class GameStats(hTeam: TeamBoxScore, vTeam: TeamBoxScore, activePlayers: List[Player])
   @JsonCodec final case class PrevMatchup(gameDate: LocalDate, gameId: String)
 
   val dateString = DateTimeFormatter.BASIC_ISO_DATE
@@ -66,7 +66,17 @@ object HomeworkSpec {
   implicit val decodeLocalDate: Decoder[LocalDate] = Decoder.decodeString.emap { str =>
     Either.catchNonFatal(LocalDate.parse(str, dateString)).leftMap(err => "Instant: " + err.getMessage)
   }
-
+  @JsonCodec final case class Player(
+                                    personId: String,
+                                    firstName: String,
+                                    lastName: String,
+                                    jersey: String,
+                                    teamId: String,
+                                    points: String,
+                                    assists: String,
+                                    blocks: String,
+                                    plusMinus: String,
+                                    )
   @JsonCodec final case class BoxScore(
                                         basicGameData: Game,
                                         previousMatchup: PrevMatchup,
@@ -99,8 +109,20 @@ object HomeworkSpec {
                                     isBuzzerBeater: Boolean,
                                     startTimeUTC: ZonedDateTime,
                                     vTeam: TeamStats,
+                                    watch: Watch
                                   )
   @JsonCodec final case class Scoreboard(games: List[Game], numGames: Int)
+
+  @JsonCodec final case class Watch(broadcast: TypeOfWatch)
+  @JsonCodec final case class TypeOfWatch(broadcasters: GameBroadcaster)
+  @JsonCodec final case class GameBroadcaster(
+                                               national: List[Broadcaster],
+                                               canadian: List[Broadcaster],
+                                               vTeam: List[Broadcaster],
+                                               hTeam: List[Broadcaster]
+                                             )
+  @JsonCodec final case class Broadcaster(shortName: String, longName: String)
+
 
   private def fetchScoreboard(date: LocalDate): Either[circe.Error, Scoreboard] = {
     val dateString = date.format(DateTimeFormatter.BASIC_ISO_DATE)
