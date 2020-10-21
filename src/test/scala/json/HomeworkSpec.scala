@@ -64,7 +64,7 @@ object HomeworkSpec {
   val dateString = DateTimeFormatter.BASIC_ISO_DATE
   implicit val encodeLocalDate: Encoder[LocalDate] = Encoder.encodeString.contramap[LocalDate](_.format(dateString))
   implicit val decodeLocalDate: Decoder[LocalDate] = Decoder.decodeString.emap { str =>
-    Either.catchNonFatal(LocalDate.parse(str, dateString)).leftMap(err => "Instant: " + err.getMessage)
+    Either.catchNonFatal(LocalDate.parse(str, dateString)).leftMap(err => "LocalDate: " + err.getMessage)
   }
   @JsonCodec final case class Player(
                                     personId: String,
