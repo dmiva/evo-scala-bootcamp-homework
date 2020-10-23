@@ -11,7 +11,7 @@ import io.circe
 import io.circe.{Decoder, Encoder}
 import io.circe.parser._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import org.scalatest.EitherValues
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -57,14 +57,9 @@ class HomeworkSpec extends AnyWordSpec with Matchers with EitherValues {
 
 object HomeworkSpec {
 
-  implicit val config: Configuration = Configuration.default.copy(
-    transformMemberNames = {
-      case "fullTimeoutRemaining" => "full_timeout_remaining"
-      case other => other
-    }
-  )
+  implicit val config: Configuration = Configuration.default
 
-  @ConfiguredJsonCodec final case class TeamTotals(assists: String, fullTimeoutRemaining: String, plusMinus: String)
+  @ConfiguredJsonCodec final case class TeamTotals(assists: String, @JsonKey("full_timeout_remaining") fullTimeoutRemaining: String, plusMinus: String)
   @JsonCodec final case class TeamBoxScore(totals: TeamTotals)
   @JsonCodec final case class GameStats(hTeam: TeamBoxScore, vTeam: TeamBoxScore, activePlayers: List[Player])
   @JsonCodec final case class PrevMatchup(gameDate: LocalDate, gameId: String)
