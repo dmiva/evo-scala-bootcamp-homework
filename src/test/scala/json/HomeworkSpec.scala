@@ -1,5 +1,6 @@
 package json
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, ZonedDateTime}
 
@@ -50,6 +51,39 @@ class HomeworkSpec extends AnyWordSpec with Matchers with EitherValues {
       val gameInfosOrError = allGameIds.map(fetchGameInfo(date, _)).sequence
       val gameInfos = gameInfosOrError.getOrElse(fail(gameInfosOrError.toString))
       gameInfos.size must be(1)
+    }
+  }
+
+  "TeamTotals class instance" should {
+    "deserialize correctly using Java serialization" in {
+      val expected = TeamTotals("32", "1", "20")
+      val serialized: Array[Byte] = Array(-84, -19, 0, 5, 115, 114, 0, 28, 106, 115, 111, 110, 46, 72, 111,
+        109, 101, 119, 111, 114, 107, 83, 112, 101, 99, 36, 84, 101, 97, 109, 84, 111, 116, 97, 108, 115, -29, -52, 43,
+        56, 8, -39, -60, -120, 2, 0, 3, 76, 0, 7, 97, 115, 115, 105, 115, 116, 115, 116, 0, 18, 76, 106, 97, 118, 97,
+        47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 76, 0, 20, 102, 117, 108, 108, 84, 105, 109, 101,
+        111, 117, 116, 82, 101, 109, 97, 105, 110, 105, 110, 103, 113, 0, 126, 0, 1, 76, 0, 9, 112, 108, 117, 115, 77,
+        105, 110, 117, 115, 113, 0, 126, 0, 1, 120, 112, 116, 0, 2, 51, 50, 116, 0, 1, 49, 116, 0, 2, 50, 48 )
+      val ois = new ObjectInputStream(new ByteArrayInputStream(serialized))
+      val actual = ois.readObject.asInstanceOf[TeamTotals]
+      ois.close()
+      actual mustEqual expected
+    }
+  }
+
+  "PrevMatchup class instance" should {
+    "deserialize correctly using Java serialization" in {
+      val expected = PrevMatchup(LocalDate.of(2019,2,15), "0031800002")
+      val serialized: Array[Byte] = Array(-84, -19, 0, 5, 115, 114, 0, 29, 106, 115, 111, 110, 46, 72, 111,
+        109, 101, 119, 111, 114, 107, 83, 112, 101, 99, 36, 80, 114, 101, 118, 77, 97, 116, 99, 104, 117, 112, 34, -96,
+        -112, -57, -57, 33, -31, -114, 2, 0, 2, 76, 0, 8, 103, 97, 109, 101, 68, 97, 116, 101, 116, 0, 21, 76, 106, 97,
+        118, 97, 47, 116, 105, 109, 101, 47, 76, 111, 99, 97, 108, 68, 97, 116, 101, 59, 76, 0, 6, 103, 97, 109, 101,
+        73, 100, 116, 0, 18, 76, 106, 97, 118, 97, 47, 108, 97, 110, 103, 47, 83, 116, 114, 105, 110, 103, 59, 120, 112,
+        115, 114, 0, 13, 106, 97, 118, 97, 46, 116, 105, 109, 101, 46, 83, 101, 114, -107, 93, -124, -70, 27, 34, 72,
+        -78, 12, 0, 0, 120, 112, 119, 7, 3, 0, 0, 7, -29, 2, 15, 120, 116, 0, 10, 48, 48, 51, 49, 56, 48, 48, 48, 48, 50)
+      val ois = new ObjectInputStream(new ByteArrayInputStream(serialized))
+      val actual = ois.readObject.asInstanceOf[PrevMatchup]
+      ois.close()
+      actual mustEqual expected
     }
   }
 
