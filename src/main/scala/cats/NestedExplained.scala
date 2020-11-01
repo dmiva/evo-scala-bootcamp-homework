@@ -89,8 +89,8 @@ object NestedExplained extends App {
   // This output looks clean. We get an aggregated result in a single Either.
 
   // If we used traverse without Nested, output would be different because of traverse return type.
-  // For this example, given a List[UserInfo] and a function UserInfo => Option[Either[String, User],
-  // traverse returns an Option[List[Either[String, User]]].
+  // For this example, given a List[UserInfo] and a function UserInfo => IO[Either[String, User],
+  // traverse returns an IO[List[Either[String, User]]].
   def createUsersNotNested(userInfos: List[UserInfo]): IO[List[Either[String, User]]] =
     userInfos.traverse(createUser)
   // println(createUsersNotNested(userInfos).unsafeRunSync())
