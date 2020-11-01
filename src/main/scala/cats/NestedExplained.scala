@@ -98,6 +98,7 @@ object NestedExplained extends App {
   //        Right(User(id #,Bob,30)),
   //        Right(User(id #,Carol,44))
   //        ))
+  // This output is less clean and need more efforts to maintain and work with it.
 
   // Sources:
   // https://typelevel.org/cats/datatypes/nested.html
