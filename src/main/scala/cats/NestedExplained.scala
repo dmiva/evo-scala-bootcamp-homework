@@ -1,6 +1,7 @@
 package cats
 
 import cats.data.Nested
+import cats.effect.IO
 import cats.implicits._
 
 object NestedExplained extends App {
@@ -60,7 +61,6 @@ object NestedExplained extends App {
   // A more interesting usage of Nested is when you have a function that performs a computation on a value of type A,
   // which appears to be nested inside two monads. For example Either[String, A] which returns a result
   // after synchronous or asynchronous computation. That results in a return type IO[Either[String, A]].
-  // For simplicity, we will replace IO with Option, thus output type is Option[Either[String, A]]
 
   case class UserInfo(name: String, age: Int)
   case class User(id: String, name: String, age: Int)
@@ -72,32 +72,34 @@ object NestedExplained extends App {
   )
 
   // Imagine we have an API for creating user
-  def createUser(userInfo: UserInfo): Option[Either[String, User]] =
-    Some(Right(User("id #", userInfo.name, userInfo.age)))
+  def createUser(userInfo: UserInfo): IO[Either[String, User]] =
+    IO(Right(User("id #", userInfo.name, userInfo.age)))
 
   // Now, we want to create a function that creates multiple users, when a list of userInfos is given.
   // For such task we can use traverse function with Nested.
-  def createUsers(userInfos: List[UserInfo]): Option[Either[String, List[User]]] =
+  def createUsers(userInfos: List[UserInfo]): IO[Either[String, List[User]]] =
     userInfos.traverse(userInfo => Nested(createUser(userInfo))).value
+  // println(createUsers(userInfos).unsafeRunSync())
   // That results in output:
-  // Some(Right(List(
+  // Right(List(
   //        User(id #,Alice,22),
   //        User(id #,Bob,30),
   //        User(id #,Carol,44)
-  //        )))
+  //        ))
   // This output looks clean. We get an aggregated result in a single Either.
 
   // If we used traverse without Nested, output would be different because of traverse return type.
   // For this example, given a List[UserInfo] and a function UserInfo => Option[Either[String, User],
   // traverse returns an Option[List[Either[String, User]]].
-  def createUsersNotNested(userInfos: List[UserInfo]): Option[List[Either[String, User]]] =
+  def createUsersNotNested(userInfos: List[UserInfo]): IO[List[Either[String, User]]] =
     userInfos.traverse(createUser)
+  // println(createUsersNotNested(userInfos).unsafeRunSync())
   // That results in output:
-  // Some(List(
-  //        Right(User(id #,Alice,22)),
-  //        Right(User(id #,Bob,30)),
-  //        Right(User(id #,Carol,44))
-  //        ))
+  // List(
+  //      Right(User(id #,Alice,22)),
+  //      Right(User(id #,Bob,30)),
+  //      Right(User(id #,Carol,44))
+  //      )
   // This output is less clean and need more efforts to maintain and work with it.
 
   // Sources:
