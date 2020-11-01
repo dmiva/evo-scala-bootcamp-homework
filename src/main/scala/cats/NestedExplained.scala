@@ -53,9 +53,6 @@ object NestedExplained extends App {
 
   // Based on properties of F[_] and G[_], there are inference rules, which define, what can be produced:
     // If F[_] and G[_] are both Functors, then Nested[F, G, *] is also a Functor (we saw this in action in the example above)
-    // If F[_] and G[_] are both Applicatives, then Nested[F, G, *] is also an Applicative
-    // If F[_] is an ApplicativeError and G[_] is an Applicative, then Nested[F, G, *] is an ApplicativeError
-    // If F[_] and G[_] are both Traverses, then Nested[F, G, *] is also a Traverse
     // Full list of rules is defined in Nested companion object.
     // In order to '*' syntax would work, a compiler plugin Kind Projector must be added to project
 
@@ -101,4 +98,8 @@ object NestedExplained extends App {
   //        Right(User(id #,Bob,30)),
   //        Right(User(id #,Carol,44))
   //        ))
+
+  // Sources:
+  // https://typelevel.org/cats/datatypes/nested.html
+  // https://typelevel.org/cats/typeclasses/traverse.html
 }
