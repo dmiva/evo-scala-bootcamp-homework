@@ -3,6 +3,8 @@ package async
 import java.net.URL
 import java.util.concurrent.Executors
 
+import cats.implicits._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
@@ -22,6 +24,14 @@ object AsyncHomework extends App {
   private implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
   //put your code there
+  args foreach { url =>
+    for {
+      pageBody <- fetchPageBody(url)
+      links <- findLinkUrls(pageBody)
+      listOfServers <- Future.traverse(links)(fetchServerName)
+      uniqueServers <- Future(listOfServers.flatten.distinct.sortBy(_.toLowerCase))
+    } yield uniqueServers foreach println
+  }
 
   private def fetchPageBody(url: String): Future[String] = {
     println(f"Fetching $url")
