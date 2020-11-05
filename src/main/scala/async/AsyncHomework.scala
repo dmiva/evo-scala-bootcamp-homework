@@ -5,7 +5,8 @@ import java.util.concurrent.Executors
 
 import cats.implicits._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.io.Source
 
 /**
@@ -24,6 +25,7 @@ object AsyncHomework extends App {
   private implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
   //put your code there
+  // to run use sbt "runMain async.AsyncHomework https://google.com"
   args foreach { url =>
     for {
       pageBody <- fetchPageBody(url)
