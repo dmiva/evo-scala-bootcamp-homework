@@ -28,16 +28,16 @@ import scala.util.{Failure, Success, Try}
  */
 object EffectsHomework1 {
   final class IO[A] private (val run: () => A) {
-//    def map[B](f: A => B): IO[B] = ???
-//    def flatMap[B](f: A => IO[B]): IO[B] = ???
-//    def *>[B](another: IO[B]): IO[B] = ???
-//    def as[B](newValue: => B): IO[B] = ???
-//    def void: IO[Unit] = ???
+
+    def map[B](f: A => B): IO[B] = IO(f(run()))
+    def flatMap[B](f: A => IO[B]): IO[B] = IO(f(run()).run())
+    def *>[B](another: IO[B]): IO[B] = flatMap(_ => another)
+    def as[B](newValue: => B): IO[B] = map(_ => newValue)
+    def void: IO[Unit] = IO(())
 //    def attempt: IO[Either[Throwable, A]] = ???
-//    def option: IO[Option[A]] = IO(Try(run()).toOption)
     def option: IO[Option[A]] = IO(Try(run()) match {
-      case Failure(exception) => Option.empty[A]
       case Success(value) => Some(value)
+      case Failure(_) => Option.empty[A]
     })
 //    def handleErrorWith[AA >: A](f: Throwable => IO[AA]): IO[AA] = ???
 //    def redeem[B](recover: Throwable => B, map: A => B): IO[B] = ???
@@ -48,14 +48,16 @@ object EffectsHomework1 {
 
   object IO {
     def apply[A](body: => A): IO[A] = delay(body)
-//    def suspend[A](thunk: => IO[A]): IO[A] = ???
-    def delay[A](body: => A): IO[A] = new IO[A](() => body)
+    def suspend[A](thunk: => IO[A]): IO[A] = thunk
+    def delay[A](body: => A): IO[A] = new IO(() => body)
     def pure[A](a: A): IO[A] = IO(a)
 //    def fromEither[A](e: Either[Throwable, A]): IO[A] = ???
 //    def fromOption[A](option: Option[A])(orElse: => Throwable): IO[A] = ???
 //    def fromTry[A](t: Try[A]): IO[A] = ???
 //    def none[A]: IO[Option[A]] = ???
-//    def raiseError[A](e: Throwable): IO[A] = ???
+    def raiseError[A](e: Throwable): IO[A] = {
+      suspend(throw e)
+    }
 //    def raiseUnless(cond: Boolean)(e: => Throwable): IO[Unit] = ???
 //    def raiseWhen(cond: Boolean)(e: => Throwable): IO[Unit] = ???
 //    def unlessA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = ???
@@ -64,8 +66,21 @@ object EffectsHomework1 {
   }
 
   def main(args: Array[String]): Unit = {
-    val tttt: IO[Int] = IO(43)
-    println(tttt.option.unsafeRunSync())
+    val tttt = IO(println("aaa"))
+    val ttt2 = IO(println("bbb"))
+//    println("1: " + tttt)
+//    println("2: " + IO(tttt).unsafeRunSync())
+
+    val hehe = tttt *> ttt2
+
+    hehe.unsafeRunSync()
+
+
+
+
+//    val ioUnsafe = IO(println("I'm unsafeRunSync!"))
+//    println(ioUnsafe.toString)
+//    Thread.sleep(1000)
 
   }
 }
