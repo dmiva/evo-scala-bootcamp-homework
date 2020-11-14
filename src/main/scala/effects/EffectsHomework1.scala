@@ -1,6 +1,6 @@
 package effects
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /*
@@ -34,16 +34,34 @@ object EffectsHomework1 {
     def *>[B](another: IO[B]): IO[B] = flatMap(_ => another)
     def as[B](newValue: => B): IO[B] = map(_ => newValue)
     def void: IO[Unit] = IO(())
-//    def attempt: IO[Either[Throwable, A]] = ???
+
+    def attempt: IO[Either[Throwable, A]] = IO(Try(run()) match {
+      case Failure(exception) => Left(exception)
+      case Success(value) => Right(value)
+    })
+
     def option: IO[Option[A]] = IO(Try(run()) match {
       case Success(value) => Some(value)
-      case Failure(_) => Option.empty[A]
+      case Failure(_) => None
     })
-//    def handleErrorWith[AA >: A](f: Throwable => IO[AA]): IO[AA] = ???
-//    def redeem[B](recover: Throwable => B, map: A => B): IO[B] = ???
-//    def redeemWith[B](recover: Throwable => IO[B], bind: A => IO[B]): IO[B] = ???
+
+    def handleErrorWith[AA >: A](f: Throwable => IO[AA]): IO[AA] = IO(Try(run()) match {
+      case Failure(exception) => f(exception).run()
+      case Success(value) => IO[AA](value).run()
+    })
+
+    def redeem[B](recover: Throwable => B, map: A => B): IO[B] = IO(Try(run()) match {
+      case Failure(exception) => recover(exception)
+      case Success(value) => map(value)
+    })
+
+    def redeemWith[B](recover: Throwable => IO[B], bind: A => IO[B]): IO[B] = IO(Try(run()) match {
+      case Failure(exception) => recover(exception).run()
+      case Success(value) => bind(value).run()
+    })
+
     def unsafeRunSync(): A = run()
-//    def unsafeToFuture(): Future[A] = ???
+    def unsafeToFuture()(implicit ec: ExecutionContext): Future[A] = Future(run())
   }
 
   object IO {
@@ -51,36 +69,30 @@ object EffectsHomework1 {
     def suspend[A](thunk: => IO[A]): IO[A] = thunk
     def delay[A](body: => A): IO[A] = new IO(() => body)
     def pure[A](a: A): IO[A] = IO(a)
-//    def fromEither[A](e: Either[Throwable, A]): IO[A] = ???
-//    def fromOption[A](option: Option[A])(orElse: => Throwable): IO[A] = ???
-//    def fromTry[A](t: Try[A]): IO[A] = ???
-//    def none[A]: IO[Option[A]] = ???
-    def raiseError[A](e: Throwable): IO[A] = {
-      suspend(throw e)
+
+    def fromEither[A](e: Either[Throwable, A]): IO[A] = e match {
+      case Left(exception) => raiseError(exception)
+      case Right(value) => pure(value)
     }
-//    def raiseUnless(cond: Boolean)(e: => Throwable): IO[Unit] = ???
-//    def raiseWhen(cond: Boolean)(e: => Throwable): IO[Unit] = ???
-//    def unlessA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = ???
-//    def whenA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = ???
-//    val unit: IO[Unit] = ???
+    def fromOption[A](option: Option[A])(orElse: => Throwable): IO[A] = option match {
+      case Some(value) => pure(value)
+      case None => raiseError(orElse)
+    }
+    def fromTry[A](t: Try[A]): IO[A] = t match {
+      case Failure(exception) => raiseError(exception)
+      case Success(value) =>pure(value)
+    }
+
+    def none[A]: IO[Option[A]] = pure(None)
+    def raiseError[A](e: Throwable): IO[A] = delay(throw e)
+    def raiseUnless(cond: Boolean)(e: => Throwable): IO[Unit] = if (cond) unit else raiseError(e)
+    def raiseWhen(cond: Boolean)(e: => Throwable): IO[Unit] = if (cond) raiseError(e) else unit
+    def unlessA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = if (cond) unit else action
+    def whenA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = if (cond) action else unit
+    val unit: IO[Unit] = pure(())
   }
 
   def main(args: Array[String]): Unit = {
-    val tttt = IO(println("aaa"))
-    val ttt2 = IO(println("bbb"))
-//    println("1: " + tttt)
-//    println("2: " + IO(tttt).unsafeRunSync())
-
-    val hehe = tttt *> ttt2
-
-    hehe.unsafeRunSync()
-
-
-
-
-//    val ioUnsafe = IO(println("I'm unsafeRunSync!"))
-//    println(ioUnsafe.toString)
-//    Thread.sleep(1000)
 
   }
 }
