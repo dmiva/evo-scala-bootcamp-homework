@@ -2,10 +2,8 @@ package effects
 
 import java.io.ByteArrayOutputStream
 import java.time.Instant
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 //import cats.effect.IO
@@ -13,20 +11,17 @@ import effects.EffectsHomework1.IO
 
 class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
 
-  "IO.option" should "work with valid data" in {
-    val input = IO(42).option
-    input.unsafeRunSync() shouldEqual Some(42)
+  "map" should "work" in {
+    val a = IO("aaa")
+    val c = a.map(_ => "ccc")
+    c.unsafeRunSync() shouldEqual "ccc"
   }
 
-  it should "return None with invalid data" in {
-    val input = IO("ttt".toInt).option
-    input.unsafeRunSync() shouldEqual None
-  }
-
-  "IO" should "delay the execution" in {
-    val input = IO(Instant.now())
-    Thread.sleep(20)
-    input.unsafeRunSync() shouldEqual Instant.now()
+  "flatMap" should "work" in {
+    val a = IO("aaa")
+    val b = IO("bbb")
+    val c = a.flatMap(_ => b)
+    c.unsafeRunSync() shouldEqual "bbb"
   }
 
   "*>" should "work" in {
@@ -43,24 +38,10 @@ class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
     c.unsafeRunSync() shouldEqual b
   }
 
-  "map" should "work" in {
-    val a = IO("aaa")
-    val c = a.map(_ => "ccc")
-    c.unsafeRunSync() shouldEqual "ccc"
-  }
-
-  "flatMap" should "work" in {
-    val a = IO("aaa")
-    val b = IO("bbb")
-    val c = a.flatMap(_ => b)
-    c.unsafeRunSync() shouldEqual "bbb"
-  }
-
-  "void" should "work" in {
+  "void" should "return ()" in {
     val input = IO("aaa").void
     input.unsafeRunSync() shouldEqual ()
   }
-
 
   "attempt" should "materialize an exception" in {
     val ex = new NumberFormatException
@@ -71,6 +52,16 @@ class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
   it should "work with value" in {
     val b = IO(42).attempt
     b.unsafeRunSync() shouldEqual Right(42)
+  }
+
+  "option" should "work with valid data" in {
+    val input = IO(42).option
+    input.unsafeRunSync() shouldEqual Some(42)
+  }
+
+  it should "return None with invalid data" in {
+    val input = IO("ttt".toInt).option
+    input.unsafeRunSync() shouldEqual None
   }
 
   "handleErrorWith" should "handle error" in {
@@ -122,6 +113,43 @@ class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
     }
   }
 
+  "suspend" should "suspend the side effect (1)" in {
+    val input = IO.suspend(IO(Instant.now()))
+    Thread.sleep(20)
+    input.unsafeRunSync() shouldEqual Instant.now()
+  }
+
+  it should "suspend the side effect (2)" in {
+    val baos = new ByteArrayOutputStream
+    val hello = "Hello"
+    Console.withOut(baos) {
+      val input = IO.suspend({ IO(print(hello)) })
+      baos.toString shouldEqual ""
+      input.unsafeRunSync()
+      baos.toString shouldEqual hello
+    }
+  }
+
+  "delay" should "suspend the side effect (1)" in {
+    val input = IO.delay(Instant.now())
+    Thread.sleep(20)
+    input.unsafeRunSync() shouldEqual Instant.now()
+  }
+
+  it should "suspend the side effect (2)" in {
+    val baos = new ByteArrayOutputStream
+    val hello = "Hello"
+    Console.withOut(baos) {
+      val input = IO.delay({ print(hello) })
+      baos.toString shouldEqual ""
+      input.unsafeRunSync()
+      baos.toString shouldEqual hello
+    }
+  }
+
+  "pure" should "suspend pure value" in {
+    IO.pure(42).unsafeRunSync() shouldEqual 42
+  }
 
   "fromEither" should "convert from Right" in {
     val input = IO.fromEither(Right(4)).unsafeRunSync()

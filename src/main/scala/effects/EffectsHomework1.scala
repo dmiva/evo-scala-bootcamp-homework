@@ -74,10 +74,12 @@ object EffectsHomework1 {
       case Left(exception) => raiseError(exception)
       case Right(value) => pure(value)
     }
+
     def fromOption[A](option: Option[A])(orElse: => Throwable): IO[A] = option match {
       case Some(value) => pure(value)
       case None => raiseError(orElse)
     }
+
     def fromTry[A](t: Try[A]): IO[A] = t match {
       case Failure(exception) => raiseError(exception)
       case Success(value) =>pure(value)
@@ -92,7 +94,4 @@ object EffectsHomework1 {
     val unit: IO[Unit] = pure(())
   }
 
-  def main(args: Array[String]): Unit = {
-
-  }
 }
