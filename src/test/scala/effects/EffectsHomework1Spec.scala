@@ -11,7 +11,7 @@ import effects.EffectsHomework1.IO
 
 class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
 
-  "map" should "work" in {
+  "map" should "transform the value" in {
     val a = IO("aaa")
     val c = a.map(_ => "ccc")
     c.unsafeRunSync() shouldEqual "ccc"
@@ -24,14 +24,36 @@ class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
     c.unsafeRunSync() shouldEqual "bbb"
   }
 
-  "*>" should "work" in {
+  "flatMap" should "sequence the side effects" in {
+    val baos = new ByteArrayOutputStream
+    Console.withOut(baos) {
+      val out = for {
+        _ <- IO(print("a"))
+        _ <- IO(print("b"))
+        _ <- IO(print("c"))
+      } yield ()
+      baos.toString shouldEqual ""
+      out.unsafeRunSync()
+      baos.toString shouldEqual "abc"
+    }
+  }
+
+  "*>" should "ignore the first action" in {
     val a = IO("aaa")
     val b = IO("bbb")
     val c = a *> b
     c.unsafeRunSync() shouldEqual "bbb"
   }
 
-  "as" should "work" in {
+  "*>" should "not run if source fails" in {
+    val ex = new NumberFormatException
+    val a = IO.raiseError(ex)
+    val b = IO("bbb")
+    val c = a *> b
+    an [NumberFormatException] should be thrownBy c.unsafeRunSync()
+  }
+
+  "as" should "replace the result of IO" in {
     val a = IO("aaa")
     val b = IO("bbb")
     val c = a as b
@@ -49,7 +71,7 @@ class EffectsHomework1Spec extends AnyFlatSpec with Matchers  {
     b.unsafeRunSync() shouldEqual Left(ex)
   }
 
-  it should "work with value" in {
+  it should "work with valid value" in {
     val b = IO(42).attempt
     b.unsafeRunSync() shouldEqual Right(42)
   }
