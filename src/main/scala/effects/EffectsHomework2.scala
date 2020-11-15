@@ -3,10 +3,10 @@ package effects
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Left, Right, Success, Try}
-//import effects.EffectsHomework1.IO
 
   /*
  * Homework 2. Same as homework 1 but in declarative encoding.
+ * Map, flatMap, *>, as - are stack safe
  */
 object EffectsHomework2 {
 
@@ -59,6 +59,11 @@ object EffectsHomework2 {
     }
   }
 
+  final case class Pure[A](a: A) extends IO[A]
+  final case class Delay[A](thunk: () => A) extends IO[A]
+  final case class Suspend[A](thunk: () => IO[A]) extends IO[A]
+  final case class FlatMap[A, B](source: IO[A], f: A => IO[B]) extends IO[B]
+
   object IO {
     def apply[A](body: => A): IO[A] = delay(body)
     def suspend[A](thunk: => IO[A]): IO[A] = Suspend(() => thunk)
@@ -89,24 +94,6 @@ object EffectsHomework2 {
     val unit: IO[Unit] = pure(())
   }
 
-  final case class Pure[A](a: A) extends IO[A]
-  final case class Delay[A](thunk: () => A) extends IO[A]
-  final case class RaiseError(e: Throwable) extends IO[Nothing]
-  final case class Suspend[A](thunk: () => IO[A]) extends IO[A]
-  final case class FlatMap[A, B](source: IO[A], f: A => IO[B]) extends IO[B]
-//    final private case class Map[A, +B](source: IO[A], f: A => B) extends IO[A]
-
-
-//    final case class AttemptIO extends IO[Either[Throwable, A]] {
-//      def apply(a: Any) =
-//        Pure(Right(a))
-//      def recover(e: Throwable) =
-//        Pure(Left(e))
-//    }
-
-
-
-
   def main(args: Array[String]): Unit = {
     val numberOfFunctionCalls = 10000
 
@@ -117,7 +104,6 @@ object EffectsHomework2 {
 
     val input = flatMapTesting(IO(println("Survived!")), numberOfFunctionCalls)
     input.unsafeRunSync()
-
   }
 
 }
