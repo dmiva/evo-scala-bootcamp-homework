@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
     sealed trait IO[A] {
 //      def map[B](f: A => B): IO[B] = IO(f(run()))
 //      def map[B](f: A => B): IO[B] = Map(this, f)
-//      def flatMap[B](f: A => IO[B]): IO[B] = IO(f(run()).run())
+      def map[B](f: A => B): IO[B] = flatMap(a => Pure(f(a)))
       def flatMap[B](f: A => IO[B]): IO[B] = FlatMap(this, f)
 
 //      def *>[B](another: IO[B]): IO[B] = flatMap(_ => another)
@@ -108,7 +108,6 @@ import scala.util.{Failure, Success, Try}
 //      def unlessA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = if (cond) unit else action
 //      def whenA(cond: Boolean)(action: => IO[Unit]): IO[Unit] = if (cond) action else unit
 //      val unit: IO[Unit] = pure(())
-
     }
 
     final case class Pure[A](a: A) extends IO[A]
@@ -143,17 +142,19 @@ import scala.util.{Failure, Success, Try}
 
 
   def main(args: Array[String]): Unit = {
-
+    val numberOfFunctionCalls = 10000
 //    val a = IO("aaa")
 //    val c = a.flatMap(_ => "ccc")
 //    c.unsafeRunSync()
 
-    def hello(text: IO[Unit], n: Int): IO[Unit] = {
-      if (n > 0) hello(text.flatMap(_ => text), n-1)
+    def flatMapTesting(text: IO[Unit], n: Int): IO[Unit] = {
+      if (n > 0) flatMapTesting(text.flatMap(_ => IO(println(n))), n-1)
       else text
     }
 
-    val tt = hello(IO(println("Survived!")), 10)
-    tt.unsafeRunSync()
+    val input = flatMapTesting(IO(println("Survived!")), numberOfFunctionCalls)
+    input.unsafeRunSync()
   }
+
+
 }
