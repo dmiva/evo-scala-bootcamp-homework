@@ -18,7 +18,7 @@ import scala.concurrent.duration._
  * If we will put a value with the same key then it should renew expiration
  */
 object SharedStateHomework extends IOApp {
-
+  import cats.implicits._
   trait Cache[F[_], K, V] {
     def get(key: K): F[Option[V]]
 
@@ -30,9 +30,11 @@ object SharedStateHomework extends IOApp {
                                               expiresIn: FiniteDuration
                                             ) extends Cache[F, K, V] {
 
-    def get(key: K): F[Option[V]] = ???
+    def get(key: K): F[Option[V]] = state.get.map(_.get(key).map {case (long, v) => v})
 
-    def put(key: K, value: V): F[Unit] = ???
+    def put(key: K, value: V): F[Unit] = state.update { map =>
+      map + (key -> (0, value))
+    }
 
   }
 
@@ -40,9 +42,22 @@ object SharedStateHomework extends IOApp {
     def of[F[_] : Clock, K, V](
                                 expiresIn: FiniteDuration,
                                 checkOnExpirationsEvery: FiniteDuration
-                              )(implicit T: Timer[F], C: Concurrent[F]): F[Cache[F, K, V]] = ???
+                              )(implicit T: Timer[F], C: Concurrent[F]): F[Cache[F, K, V]] = {
+//      Ref.of[F, Map[K, (Long, V)]](): F[Cache[F, K, V]]
 
-  }
+//      def cleanUp(state: Ref[F, Map[K, (Long, V)]]): F[Unit] = {
+//        //
+//        val currentTime = Clock[F].realTime(MILLISECONDS)
+//         val notExpiredElems = state.get.map(_.filter(_._2._1 > currentTime))
+//      }
+
+
+      Ref.of[F, Map[K, (Long, V)]](Map.empty).map(ref => new RefCache[F, K, V](ref, expiresIn))
+
+    }
+
+
+    }
 
   override def run(args: List[String]): IO[ExitCode] = {
 
