@@ -30,13 +30,31 @@ object SharedStateHomework extends IOApp {
                                               expiresIn: FiniteDuration
                                             ) extends Cache[F, K, V] {
 
-    def get(key: K): F[Option[V]] = state.get.map(_.get(key).map {case (long, v) => v})
+    def get(key: K): F[Option[V]] = state.get.map(_.get(key).map { case (long, v) => v })
 
-    def put(key: K, value: V): F[Unit] = state.update { map =>
-      map + (key -> (0, value))
+    //    def put(key: K, value: V): F[Unit] = state.update { map =>
+    //      Clock[F].realTime(MILLISECONDS).flatMap { time =>
+    //
+    //      }
+    //      map + (key -> (time, value))
+    //
+    //    }
+
+    //    def put(key: K, value: V): F[Unit] = {
+    //      for {
+    //        time <- Clock[F].realTime(MILLISECONDS)
+    //      } yield state.update { map => map + (key -> (time, value)) }
+    //    }
+    //  }
+
+    def put(key: K, value: V): F[Unit] = {
+      Clock[F].realTime(MILLISECONDS).flatMap { time =>
+        state.update(map => map + (key -> (time + expiresIn.toMillis, value)))
+      }
     }
 
   }
+
 
   object Cache {
     def of[F[_] : Clock, K, V](
@@ -53,11 +71,9 @@ object SharedStateHomework extends IOApp {
 
 
       Ref.of[F, Map[K, (Long, V)]](Map.empty).map(ref => new RefCache[F, K, V](ref, expiresIn))
-
     }
 
-
-    }
+  }
 
   override def run(args: List[String]): IO[ExitCode] = {
 
