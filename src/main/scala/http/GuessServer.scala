@@ -1,5 +1,14 @@
 package http
 
+import cats.effect.{ExitCode, IO, IOApp}
+import http.Protocol.NewGame
+import org.http4s.HttpRoutes
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.server.blaze.BlazeServerBuilder
+
+import scala.concurrent.ExecutionContext
+
 // Write a server and a client that play a number guessing game together.
 //
 // Communication flow should be as follows:
@@ -14,6 +23,41 @@ package http
 //
 // Use HTTP or WebSocket for communication. The exact protocol and message format to use is not specified and
 // should be designed while working on the task.
-object GuessServer {
+object GuessServer extends IOApp {
 
+  private val newGameRoutes = {
+
+    import io.circe.generic.auto._
+    import io.circe.syntax._
+    import org.http4s.circe.CirceEntityCodec._
+
+    HttpRoutes.of[IO] {
+      case req @ POST -> Root / "newgame" =>
+        req.as[NewGame].flatMap { game =>
+          val newGame = NewGame(min = game.min, max = game.max, attempts = game.attempts)
+          Ok(newGame.asJson)
+        }
+    }
+  }
+
+  private val httpApp = {
+    newGameRoutes
+  }.orNotFound
+
+  def run(args: List[String]): IO[ExitCode] =
+    BlazeServerBuilder[IO](ExecutionContext.global)
+      .bindHttp(9000, "localhost")
+      .withHttpApp(httpApp)
+      .serve
+      .compile
+      .drain
+      .as(ExitCode.Success)
+
+}
+
+object Protocol {
+  final case class NewGame(min: Int, max: Int, attempts: Int)
+
+//  trait Guess
+//  final case class Lower()
 }
