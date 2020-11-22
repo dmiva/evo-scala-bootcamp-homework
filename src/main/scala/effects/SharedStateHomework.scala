@@ -4,6 +4,7 @@ import cats.Monad
 import cats.effect.concurrent.Ref
 import cats.effect.{Clock, Concurrent, ExitCode, IO, IOApp, Timer}
 
+import cats.implicits._
 import scala.concurrent.duration._
 
 /*
@@ -18,7 +19,6 @@ import scala.concurrent.duration._
  * If we will put a value with the same key then it should renew expiration
  */
 object SharedStateHomework extends IOApp {
-  import cats.implicits._
   trait Cache[F[_], K, V] {
     def get(key: K): F[Option[V]]
 
@@ -49,6 +49,7 @@ object SharedStateHomework extends IOApp {
 
     def put(key: K, value: V): F[Unit] = {
       Clock[F].realTime(MILLISECONDS).flatMap { time =>
+//        println(s"Put Key: $key, ExpTime: ${time+expiresIn.toMillis}, CurrTime: $time")
         state.update(map => map + (key -> (time + expiresIn.toMillis, value)))
       }
     }
@@ -69,9 +70,17 @@ object SharedStateHomework extends IOApp {
         //         val notExpiredElems = state.get.map(_.filter(_._2._1 > currentTime))
 
         val cleanCache = Clock[F].realTime(MILLISECONDS).flatMap { currentTime =>
-          state.update(map => map.collect { case elem@(key, (expTime, v)) if expTime < currentTime => elem })
+//          println(s"Time: $currentTime")
+          state.update(map => map.collect {
+            case elem @ (key, (expTime, v)) if expTime > currentTime => {
+//              println(s"Key: $key, ExpTime: $expTime, CurrTime: $currentTime, Keep?: ${expTime > currentTime}")
+              //            case elem @ (key, (expTime, v)) => {
+              elem
+            }
+          })
         }
         T.sleep(checkOnExpirationsEvery) >> cleanCache >> cleanUp(state)
+//        T.sleep(checkOnExpirationsEvery) >> cleanUp(state)
       }
 
       //      val cache = Ref.of[F, Map[K, (Long, V)]](Map.empty)
@@ -110,6 +119,40 @@ object SharedStateHomework extends IOApp {
         println(s"second key $s")
       })
     } yield ExitCode.Success
+
+
+//    for {
+//      cache <- Cache.of[IO, Int, String](10.seconds, 4.seconds)
+//      _ <- cache.put(1, "value1")
+//      _ <- cache.put(2, "value2")
+//      _ <- cache.get(1).flatMap(s => IO {
+//        println(s"first key $s")
+//      })
+//      _ <- cache.get(2).flatMap(s => IO {
+//        println(s"second key $s")
+//      })
+//      _ <- IO.sleep(8.seconds)
+//      _ <- cache.get(1).flatMap(s => IO {
+//        println(s"first key $s")
+//      })
+//      _ <- cache.get(2).flatMap(s => IO {
+//        println(s"second key $s")
+//      })
+//      _ <- IO.sleep(3.seconds)
+//      _ <- cache.get(1).flatMap(s => IO {
+//        println(s"first key $s")
+//      })
+//      _ <- cache.get(2).flatMap(s => IO {
+//        println(s"second key $s")
+//      })
+//      _ <- IO.sleep(2.seconds) // Should evict during this sleep
+//      _ <- cache.get(1).flatMap(s => IO {
+//        println(s"first key $s")
+//      })
+//      _ <- cache.get(2).flatMap(s => IO {
+//        println(s"second key $s")
+//      })
+//    } yield ExitCode.Success
   }
 }
 
