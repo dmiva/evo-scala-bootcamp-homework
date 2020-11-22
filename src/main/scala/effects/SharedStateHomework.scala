@@ -61,18 +61,26 @@ object SharedStateHomework extends IOApp {
                                 expiresIn: FiniteDuration,
                                 checkOnExpirationsEvery: FiniteDuration
                               )(implicit T: Timer[F], C: Concurrent[F]): F[Cache[F, K, V]] = {
-//      Ref.of[F, Map[K, (Long, V)]](): F[Cache[F, K, V]]
+      //      Ref.of[F, Map[K, (Long, V)]](): F[Cache[F, K, V]]
 
-//      def cleanUp(state: Ref[F, Map[K, (Long, V)]]): F[Unit] = {
-//        //
-//        val currentTime = Clock[F].realTime(MILLISECONDS)
-//         val notExpiredElems = state.get.map(_.filter(_._2._1 > currentTime))
-//      }
+      def cleanUp(state: Ref[F, Map[K, (Long, V)]]): F[Unit] = {
+        //
+        //        val currentTime = Clock[F].realTime(MILLISECONDS)
+        //         val notExpiredElems = state.get.map(_.filter(_._2._1 > currentTime))
 
+        val cleanCache = Clock[F].realTime(MILLISECONDS).flatMap { currentTime =>
+          state.update(map => map.collect { case elem@(key, (expTime, v)) if expTime < currentTime => elem })
+        }
+        T.sleep(checkOnExpirationsEvery) >> cleanCache >> cleanUp(state)
+      }
 
-      Ref.of[F, Map[K, (Long, V)]](Map.empty).map(ref => new RefCache[F, K, V](ref, expiresIn))
+      //      val cache = Ref.of[F, Map[K, (Long, V)]](Map.empty)
+      Ref.of[F, Map[K, (Long, V)]](Map.empty).flatTap(s => C.start(cleanUp(s)).void).map(ref => new RefCache[F, K, V](ref, expiresIn))
+      //      Ref.of[F, Map[K, (Long, V)]](Map.empty).map { ref =>
+      //        new RefCache[F, K, V](ref, expiresIn)
+      //      }
+
     }
-
   }
 
   override def run(args: List[String]): IO[ExitCode] = {
