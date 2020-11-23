@@ -13,8 +13,10 @@ import org.http4s.dsl.io._
 import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s._
+import org.http4s.client.Client
 
 import scala.concurrent.ExecutionContext
+import scala.util.Random
 
 // Write a server and a client that play a number guessing game together.
 //
@@ -33,8 +35,8 @@ import scala.concurrent.ExecutionContext
 object GuessClient extends IOApp {
 
   private val uri = uri"http://localhost:9000"
-
   private def printLine(string: String = ""): IO[Unit] = IO(println(string))
+
 
   override def run(args: List[String]): IO[ExitCode] =
     BlazeClientBuilder[IO](ExecutionContext.global).resource
@@ -53,17 +55,25 @@ object GuessClient extends IOApp {
 
 //        _ <- client.expect[String](Method.GET(uri / "cookies").map(_.addCookie("counter", "9")))
 
-        _ <- {
-          import io.circe.generic.auto._
-          import org.http4s.circe.CirceEntityCodec._
-
-          // User JSON encoder can also be declared explicitly instead of importing from `CirceEntityCodec`:
-          // implicit val helloEncoder = org.http4s.circe.jsonEncoderOf[IO, Hello]
-
-          client.expect[NewGame](Method.POST(NewGame(min = 1, max = 10, attempts = 3), uri / "newgame"))
-            .flatMap(game => printLine(game.toString))
-        }
+        _ <- createNewGame(client)
 
       } yield ()
     }.as(ExitCode.Success)
+
+  private def createNewGame(client: Client[IO]) = {
+    import io.circe.generic.auto._
+    import org.http4s.circe.CirceEntityCodec._
+
+    val min = Random.between(1, 100)
+    val max = Random.between(101, 200)
+    val attempts = Random.between(3, 10)
+
+    client.expect[String]((uri / "newgame").withQueryParams(Map[String, Int](
+      "min" -> min,
+      "max" -> max,
+      "attempts" -> attempts
+    ))) >>= printLine
+//    client.expect[String](Method.GET(NewGame(min = min, max = max, attempts = attempts), uri / "newgame")) >>= printLine
+  }
+
 }

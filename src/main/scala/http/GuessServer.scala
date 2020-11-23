@@ -25,18 +25,32 @@ import scala.concurrent.ExecutionContext
 // should be designed while working on the task.
 object GuessServer extends IOApp {
 
+  final case class Game(guessedNumber: Int, attempts: Int)
+
+
+
   private val newGameRoutes = {
 
     import io.circe.generic.auto._
     import io.circe.syntax._
     import org.http4s.circe.CirceEntityCodec._
 
+    object MinNumberMatcher extends QueryParamDecoderMatcher[Int](name = "min")
+    object MaxNumberMatcher extends QueryParamDecoderMatcher[Int](name = "max")
+    object AttemptsMatcher extends QueryParamDecoderMatcher[Int](name = "attempts")
+
+//    HttpRoutes.of[IO] {
+//      case req @ GET -> Root / "newgame" =>
+//        req.as[NewGame].flatMap { game =>
+//          val newGame = NewGame(min = game.min, max = game.max, attempts = game.attempts)
+//
+//          Ok("You can start guessing!".asJson).map(_.addCookie("clientId", "1"))
+//        }
+//    }
+
     HttpRoutes.of[IO] {
-      case req @ POST -> Root / "newgame" =>
-        req.as[NewGame].flatMap { game =>
-          val newGame = NewGame(min = game.min, max = game.max, attempts = game.attempts)
-          Ok(newGame.asJson)
-        }
+      case req @ GET -> Root / "newgame" :? MinNumberMatcher(min) :? MaxNumberMatcher(max) :? AttemptsMatcher(attempts) =>
+      Ok(s"Min: $min, Max: $max, Att: $attempts !").map(_.addCookie("clientId", "1"))
     }
   }
 
