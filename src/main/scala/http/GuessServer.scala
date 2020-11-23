@@ -1,13 +1,19 @@
 package http
 
+import java.util.UUID
+
+import cats.data.Kleisli
+import cats.effect.concurrent.Ref
 import cats.effect.{ExitCode, IO, IOApp}
-import http.Protocol.NewGame
-import org.http4s.HttpRoutes
+import cats.implicits.{catsSyntaxFlatMapOps, toSemigroupKOps}
+import org.http4s.{HttpRoutes, Request, Response}
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
+import scala.util.Random
 
 // Write a server and a client that play a number guessing game together.
 //
@@ -25,53 +31,91 @@ import scala.concurrent.ExecutionContext
 // should be designed while working on the task.
 object GuessServer extends IOApp {
 
-  final case class Game(guessedNumber: Int, attempts: Int)
-
-
-
-  private val newGameRoutes = {
-
-    import io.circe.generic.auto._
-    import io.circe.syntax._
-    import org.http4s.circe.CirceEntityCodec._
-
-    object MinNumberMatcher extends QueryParamDecoderMatcher[Int](name = "min")
-    object MaxNumberMatcher extends QueryParamDecoderMatcher[Int](name = "max")
-    object AttemptsMatcher extends QueryParamDecoderMatcher[Int](name = "attempts")
-
-//    HttpRoutes.of[IO] {
-//      case req @ GET -> Root / "newgame" =>
-//        req.as[NewGame].flatMap { game =>
-//          val newGame = NewGame(min = game.min, max = game.max, attempts = game.attempts)
-//
-//          Ok("You can start guessing!".asJson).map(_.addCookie("clientId", "1"))
-//        }
-//    }
-
-    HttpRoutes.of[IO] {
-      case req @ GET -> Root / "newgame" :? MinNumberMatcher(min) :? MaxNumberMatcher(max) :? AttemptsMatcher(attempts) =>
-      Ok(s"Min: $min, Max: $max, Att: $attempts !").map(_.addCookie("clientId", "1"))
-    }
-  }
-
-  private val httpApp = {
-    newGameRoutes
-  }.orNotFound
+  val cache = new TrieMap[String, Game]()
 
   def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO](ExecutionContext.global)
       .bindHttp(9000, "localhost")
-      .withHttpApp(httpApp)
+      .withHttpApp(httpApp(cache))
       .serve
       .compile
       .drain
       .as(ExitCode.Success)
 
-}
+  private def httpApp(cache: TrieMap[String, Game]) = {
+    newGameRoute(cache) <+> guessRoute(cache)
+  }.orNotFound
 
-object Protocol {
-  final case class NewGame(min: Int, max: Int, attempts: Int)
+  private def newGameRoute(cache: TrieMap[String, Game]): HttpRoutes[IO] = {
 
-//  trait Guess
-//  final case class Lower()
+    object MinNumberMatcher extends QueryParamDecoderMatcher[Int](name = "min")
+    object MaxNumberMatcher extends QueryParamDecoderMatcher[Int](name = "max")
+    object AttemptsMatcher extends QueryParamDecoderMatcher[Int](name = "attempts")
+
+    HttpRoutes.of[IO] {
+      case GET -> Root / "newgame" :? MinNumberMatcher(min) :? MaxNumberMatcher(max) :? AttemptsMatcher(attempts) => for {
+        clientId      <- IO(UUID.randomUUID().toString)
+        guessedNumber <- IO(Random.between(min,max))
+        _             <- IO(cache.put(clientId, Game(guessedNumber, min, max, attempts)))
+        response      <- Ok(s"Use curl --cookie clientId=$clientId localhost:9000/game?guess=N for guessing${System.lineSeparator}").map(_.addCookie("clientId", clientId))
+      } yield response
+    }
+  }
+
+  private def guessRoute(cache: TrieMap[String, Game]): HttpRoutes[IO] = {
+
+    object GuessMatcher extends QueryParamDecoderMatcher[Int](name = "guess")
+
+    HttpRoutes.of[IO] {
+      case req @ GET -> Root / "game" :? GuessMatcher(guess) => {
+        val cookie = req.cookies.find(_.name == "clientId")
+
+        cookie.map(_.content) match {
+          case Some(id) => {
+            cache.get(id) match {
+              case Some(game) => processGuess(cache, id, game, guess)
+              case None       => BadRequest(s"Game for clientId=$id has not been started")
+            }
+          }
+          case None           => BadRequest(s"ClientId not present in request")
+        }
+      }
+    }
+  }
+
+  def processGuess(cache: TrieMap[String, Game], clientId: String, game: Game, guess: Int): IO[Response[IO]] = {
+    val attemptsLeft = game.attemptsLeft - 1
+
+    if (attemptsLeft == 0) {
+      IO(cache.remove(clientId)) *> Ok(s"You have lost! The guessed number was ${game.guessedNumber}${System.lineSeparator}")
+    } else {
+      game.checkGuess(guess) match {
+        case Equal => {
+          IO(cache.remove(clientId)) *> Ok(s"You have guessed the number! Thanks for playing!")
+        }
+        case Higher => {
+          val updatedGame = game.copy(attemptsLeft = attemptsLeft)
+          IO(cache.put(clientId, updatedGame)) *> Ok(s"Number is higher! You have $attemptsLeft attempts left!${System.lineSeparator}")
+        }
+        case Lower =>{
+          val updatedGame = game.copy(attemptsLeft = attemptsLeft)
+          IO(cache.put(clientId, updatedGame)) *> Ok(s"Number is lower! You have $attemptsLeft attempts left!${System.lineSeparator}")
+        }
+      }
+    }
+  }
+
+  trait GuessResult
+  final case object Lower extends GuessResult
+  final case object Higher extends GuessResult
+  final case object Equal extends GuessResult
+
+  final case class Game(guessedNumber: Int, min: Int, max: Int, attemptsLeft: Int) {
+    def checkGuess(clientGuess: Int): GuessResult = {
+      if (clientGuess < guessedNumber) Higher
+      else if (clientGuess > guessedNumber) Lower
+      else Equal
+    }
+  }
+
 }
