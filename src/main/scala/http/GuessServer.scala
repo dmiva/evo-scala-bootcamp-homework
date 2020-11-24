@@ -2,11 +2,9 @@ package http
 
 import java.util.UUID
 
-import cats.data.Kleisli
-import cats.effect.concurrent.Ref
 import cats.effect.{ExitCode, IO, IOApp}
-import cats.implicits.{catsSyntaxFlatMapOps, toSemigroupKOps}
-import org.http4s.{HttpRoutes, Request, Response}
+import cats.implicits.{toSemigroupKOps}
+import org.http4s.{ HttpRoutes, Response}
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -84,23 +82,32 @@ object GuessServer extends IOApp {
   }
 
   def processGuess(cache: TrieMap[String, Game], clientId: String, game: Game, guess: Int): IO[Response[IO]] = {
+    import io.circe.generic.auto._
+    import io.circe.syntax._
+    import org.http4s.circe.CirceEntityCodec._
+
     val attemptsLeft = game.attemptsLeft - 1
 
     if (attemptsLeft == 0) {
-      IO(cache.remove(clientId)) *> Ok(s"You have lost! The guessed number was ${game.guessedNumber}${System.lineSeparator}")
+      IO(cache.remove(clientId)) *>
+        Ok(JsonResponse(s"You have lost! The guessed number was ${game.guessedNumber}${System.lineSeparator}", "Lost").asJson)
     } else {
       game.checkGuess(guess) match {
         case Equal => {
-          IO(cache.remove(clientId)) *> Ok(s"You have guessed the number! Thanks for playing!")
+          IO(cache.remove(clientId)) *>
+            Ok(JsonResponse(s"You have guessed the number! Thanks for playing!", "Equal").asJson)
         }
         case Higher => {
           val updatedGame = game.copy(attemptsLeft = attemptsLeft)
-          IO(cache.put(clientId, updatedGame)) *> Ok(s"Number is higher! You have $attemptsLeft attempts left!${System.lineSeparator}")
+          IO(cache.put(clientId, updatedGame)) *>
+            Ok(JsonResponse(s"Number is higher! You have $attemptsLeft attempts left!${System.lineSeparator}", "Higher").asJson)
         }
-        case Lower =>{
+        case Lower => {
           val updatedGame = game.copy(attemptsLeft = attemptsLeft)
-          IO(cache.put(clientId, updatedGame)) *> Ok(s"Number is lower! You have $attemptsLeft attempts left!${System.lineSeparator}")
+          IO(cache.put(clientId, updatedGame)) *>
+            Ok(JsonResponse(s"Number is lower! You have $attemptsLeft attempts left!${System.lineSeparator}", "Lower").asJson)
         }
+        case Lost => InternalServerError()
       }
     }
   }
@@ -109,6 +116,7 @@ object GuessServer extends IOApp {
   final case object Lower extends GuessResult
   final case object Higher extends GuessResult
   final case object Equal extends GuessResult
+  final case object Lost extends GuessResult
 
   final case class Game(guessedNumber: Int, min: Int, max: Int, attemptsLeft: Int) {
     def checkGuess(clientGuess: Int): GuessResult = {
@@ -118,4 +126,5 @@ object GuessServer extends IOApp {
     }
   }
 
+   final case class JsonResponse(msg: String, guessResult: String)
 }
