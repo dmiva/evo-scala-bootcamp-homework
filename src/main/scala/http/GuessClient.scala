@@ -1,22 +1,15 @@
 package http
 
-import cats.effect.{Blocker, ExitCode, IO, IOApp}
-import cats.implicits.catsSyntaxFlatMapOps
-import http.Protocol.NewGame
-import org.http4s.client.blaze.BlazeClientBuilder
-import org.http4s.headers.`Content-Type`
-import org.http4s._
 import org.http4s.implicits.http4sLiteralsSyntax
-import org.http4s.multipart.{Multipart, Part}
+import cats.effect.{Blocker, ExitCode, IO, IOApp}
+import http.GuessServer.JsonResponse
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.headers._
-import org.http4s.implicits._
-import org.http4s._
-import org.http4s.client.Client
 
 import scala.concurrent.ExecutionContext
 import scala.util.Random
+import org.http4s.client._
+import org.http4s.dsl.io.GET
 
 // Write a server and a client that play a number guessing game together.
 //
@@ -35,45 +28,52 @@ import scala.util.Random
 object GuessClient extends IOApp {
 
   private val uri = uri"http://localhost:9000"
-  private def printLine(string: String = ""): IO[Unit] = IO(println(string))
 
+  private def printLine(string: String = ""): IO[Unit] = IO(println(string))
 
   override def run(args: List[String]): IO[ExitCode] =
     BlazeClientBuilder[IO](ExecutionContext.global).resource
       .parZip(Blocker[IO]).use { case (client, blocker) =>
       for {
-//        _ <- client.expect[String](uri / "hello" / "world") >>= printLine
-//
-//        _ <- printLine(string = "Executing requests with path and query parameters:")
-//        _ <- client.expect[String](uri / "params" / "2020-11-10") >>= printLine
-//        _ <- client.expect[String]((uri / "params").withQueryParam(key = "date", value = "2020-11-10")) >>= printLine
-
-        // Exercise 4. Call HTTP endpoint, implemented in scope of Exercise 1.
-        // curl "localhost:9001/params/validate?timestamp=2020-11-04T14:19:54.736Z"
-
-//        _ <- client.expect[String](Method.GET(uri / "headers", Header("Request-Header", "Request header value"))) >>= printLine
-
-//        _ <- client.expect[String](Method.GET(uri / "cookies").map(_.addCookie("counter", "9")))
-
-        _ <- createNewGame(client)
-
+        game <- createNewGame(client)
+        _ <- makeGuess(client, game.clientId, game.guess, game.min, game.max)
       } yield ()
     }.as(ExitCode.Success)
 
-  private def createNewGame(client: Client[IO]) = {
-    import io.circe.generic.auto._
-    import org.http4s.circe.CirceEntityCodec._
+  private def createNewGame(client: Client[IO]): IO[Game] = {
 
     val min = Random.between(1, 100)
     val max = Random.between(101, 200)
     val attempts = Random.between(3, 10)
 
-    client.expect[String]((uri / "newgame").withQueryParams(Map[String, Int](
+    client.get((uri / "newgame").withQueryParams(Map[String, Int](
       "min" -> min,
       "max" -> max,
       "attempts" -> attempts
-    ))) >>= printLine
-//    client.expect[String](Method.GET(NewGame(min = min, max = max, attempts = attempts), uri / "newgame")) >>= printLine
+    )))(_.cookies.find(_.name == "clientId") match {
+      case Some(id) => printLine(s"Starting game - Min:$min, Max:$max, Nr of attempts: $attempts") *>
+        IO(Game(id.content, Random.between(min, max), min, max))
+      case None => IO(Game("0",0,0,0))
+    })
   }
 
+  private def makeGuess(client: Client[IO], clientId: String, guess: Int, min: Int, max: Int): IO[Unit] = {
+    import io.circe.generic.auto._
+    import org.http4s.circe.CirceEntityCodec._
+
+    client.expect[JsonResponse](GET((uri / "game").withQueryParam("guess", guess))
+      .map(_.addCookie("clientId", clientId))).flatMap { response =>
+      response.guessResult match {
+        case "Equal" => printLine(s"Number is correctly guessed: $guess") *> IO.unit
+        case "Higher" => printLine(s"Trying to guess: $guess") *>
+          makeGuess(client, clientId, Random.between(guess, max), guess, max)
+        case "Lost" => printLine(s"Number was not guessed: $guess") *> IO.unit
+        case "Lower" => printLine(s"Trying to guess: $guess") *>
+          makeGuess(client, clientId, Random.between(min, guess), min, guess)
+        case _ => IO.unit
+      }
+    }
+  }
+
+  final case class Game(clientId: String, guess: Int, min: Int, max: Int)
 }
