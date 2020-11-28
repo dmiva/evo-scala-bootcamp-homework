@@ -90,29 +90,29 @@ object GuessServer extends IOApp {
 
     if (attemptsLeft == 0) {
       IO(cache.remove(clientId)) *>
-        Ok(JsonResponse(s"You have lost! The guessed number was ${game.guessedNumber}${System.lineSeparator}", "Lost").asJson)
+        Ok(JsonResponse(s"You have lost! The guessed number was ${game.guessedNumber}${System.lineSeparator}", Lost).asJson)
     } else {
       game.checkGuess(guess) match {
         case Equal => {
           IO(cache.remove(clientId)) *>
-            Ok(JsonResponse(s"You have guessed the number! Thanks for playing!", "Equal").asJson)
+            Ok(JsonResponse(s"You have guessed the number! Thanks for playing!", Equal).asJson)
         }
         case Higher => {
           val updatedGame = game.copy(attemptsLeft = attemptsLeft)
           IO(cache.put(clientId, updatedGame)) *>
-            Ok(JsonResponse(s"Number is higher! You have $attemptsLeft attempts left!${System.lineSeparator}", "Higher").asJson)
+            Ok(JsonResponse(s"Number is higher! You have $attemptsLeft attempts left!${System.lineSeparator}", Higher).asJson)
         }
         case Lower => {
           val updatedGame = game.copy(attemptsLeft = attemptsLeft)
           IO(cache.put(clientId, updatedGame)) *>
-            Ok(JsonResponse(s"Number is lower! You have $attemptsLeft attempts left!${System.lineSeparator}", "Lower").asJson)
+            Ok(JsonResponse(s"Number is lower! You have $attemptsLeft attempts left!${System.lineSeparator}", Lower).asJson)
         }
         case Lost => InternalServerError()
       }
     }
   }
 
-  trait GuessResult
+  sealed trait GuessResult
   final case object Lower extends GuessResult
   final case object Higher extends GuessResult
   final case object Equal extends GuessResult
@@ -126,5 +126,5 @@ object GuessServer extends IOApp {
     }
   }
 
-   final case class JsonResponse(msg: String, guessResult: String)
+   final case class JsonResponse(msg: String, guessResult: GuessResult)
 }

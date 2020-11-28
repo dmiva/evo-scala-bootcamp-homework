@@ -2,7 +2,7 @@ package http
 
 import org.http4s.implicits.http4sLiteralsSyntax
 import cats.effect.{Blocker, ExitCode, IO, IOApp}
-import http.GuessServer.JsonResponse
+import http.GuessServer.{Higher, JsonResponse, Lost, Lower, Equal}
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 
@@ -64,11 +64,11 @@ object GuessClient extends IOApp {
     client.expect[JsonResponse](GET((uri / "game").withQueryParam("guess", guess))
       .map(_.addCookie("clientId", clientId))).flatMap { response =>
       response.guessResult match {
-        case "Equal" => printLine(s"Number is correctly guessed: $guess") *> IO.unit
-        case "Higher" => printLine(s"Trying to guess: $guess") *>
+        case Equal => printLine(s"Number is correctly guessed: $guess") *> IO.unit
+        case Higher => printLine(s"Trying to guess: $guess") *>
           makeGuess(client, clientId, Random.between(guess, max), guess, max)
-        case "Lost" => printLine(s"Number was not guessed: $guess") *> IO.unit
-        case "Lower" => printLine(s"Trying to guess: $guess") *>
+        case Lost => printLine(s"Number was not guessed: $guess") *> IO.unit
+        case Lower => printLine(s"Trying to guess: $guess") *>
           makeGuess(client, clientId, Random.between(min, guess), min, guess)
         case _ => IO.unit
       }
