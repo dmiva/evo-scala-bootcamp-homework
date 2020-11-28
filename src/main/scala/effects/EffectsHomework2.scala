@@ -22,6 +22,9 @@ object EffectsHomework2 {
       case Success(value) => Right(value)
     })
 
+//    def attempt: IO[Either[Throwable, A]] = FlatMap(this, AttemptIO.asInstanceOf[A => IO[Either[Throwable, A]]])
+//    def attempt: IO[Either[Throwable, A]] = Attempt(this)
+
     def option: IO[Option[A]] = IO(Try(run(this)) match {
       case Success(value) => Some(value)
       case Failure(_) => None
@@ -50,9 +53,14 @@ object EffectsHomework2 {
       case Pure(a) => a
       case Delay(thunk) => thunk()
       case Suspend(thunk) => run(thunk())
+//      case Attempt(body) => Try(run(body)) match {
+//        case Failure(exception) => run(Pure(Left(exception)))
+//        case Success(value) => run(Pure(Right(value)))
+//      }
       case FlatMap(source, f) => source match {
         case Pure(a) => run(f(a))
         case Delay(thunk) => run(f(thunk()))
+//        case Attempt(body) => run(source.flatMap(body) flatMap f)
         case Suspend(thunk) => run(f(thunk()  ))
         case FlatMap(source, g) => run(source.flatMap(g(_) flatMap f))
       }
@@ -63,6 +71,25 @@ object EffectsHomework2 {
   final case class Delay[A](thunk: () => A) extends IO[A]
   final case class Suspend[A](thunk: () => IO[A]) extends IO[A]
   final case class FlatMap[A, B](source: IO[A], f: A => IO[B]) extends IO[B]
+//    final case class Attempt[A](body: IO[A]) extends IO[Either[Throwable, A]]
+//  final case class Attempt[A](a: Either[Throwable, A]) extends IO[A]
+//  }
+
+//    object AttemptIO extends AttemptIOFrame[Any, IO[Either[Throwable, Any]]] {
+//      override def apply(a: Any): IO[Either[Throwable, Any]] = Pure(Right(a))
+//      override def recover(e: Throwable): IO[Either[Throwable, Any]] = Pure(Left(e))
+//    }
+//
+//    abstract class AttemptIOFrame[-A, +R] extends (A => R) {
+//      def apply(a: A): R
+//      def recover(e: Throwable): R
+//
+//      final def fold(value: Either[Throwable, A]): R =
+//        value match {
+//          case Right(a) => apply(a)
+//          case Left(e)  => recover(e)
+//        }
+//    }
 
   object IO {
     def apply[A](body: => A): IO[A] = delay(body)
