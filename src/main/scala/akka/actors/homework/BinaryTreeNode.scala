@@ -19,13 +19,43 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
   var subtrees = Map[Position, ActorRef]()
   var removed = initiallyRemoved
 
-  def insertRightOrLeft(m: Insert) = ???
+  def insertRightOrLeft(m: Insert) = m match {
+    case insertMsg @ Insert(requester, id, newElem) =>
+      // Compare this node value with new value
+      if (newElem == elem) {
+        // Node with such value exists.
+        // Inform the requester
+        requester ! OperationFinished(id)
+      } else if (newElem > elem) {
+        // If the right node exists, check there
+        // Otherwise create right node and let it inform the requester
+        subtrees.get(Right) match {
+          case Some(node) => node ! insertMsg
+          case None =>
+            val rightActor = context.actorOf(BinaryTreeNode.props(newElem, false))
+            subtrees += Right -> rightActor
+            rightActor ! insertMsg
+        }
+      } else if (newElem < elem) {
+        // If the left node exists, check there
+        // Otherwise create left node and let it inform the requester
+        subtrees.get(Left) match {
+          case Some(node) => node ! insertMsg
+          case None =>
+            val leftActor = context.actorOf(BinaryTreeNode.props(newElem, false))
+            subtrees += Left -> leftActor
+            leftActor ! insertMsg
+        }
+      }
+  }
 
   def isExistedElement(m: Contains) = ???
 
   def removeElement(m: Remove) = ???
 
   def receive: Receive = {
-    case _ => ???
+    case m: Insert    => insertRightOrLeft(m)
+    case m: Contains  => isExistedElement(m)
+    case m: Remove    => removeElement(m)
   }
 }
