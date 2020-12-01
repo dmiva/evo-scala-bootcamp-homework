@@ -56,30 +56,22 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
     }
 
 
-  def removeElement(m: Remove) = m match {
-    case removeMsg @ Remove(requester, id, removeElem) =>
+  def removeElement(m: Remove): Unit =
     // Compare this node value with remove value
-      if (removeElem == elem) {
-        // Node with such value exists.
-        // Inform the requester
-        removed = true
-        requester ! OperationFinished(id)
-      } else if (removeElem > elem) {
-        // If the right node exists, check there
-        // Otherwise inform that operation is completed
-        subtrees.get(Right) match {
-          case Some(node) => node ! removeMsg
-          case None => requester ! OperationFinished(id)
-        }
-      } else if (removeElem < elem) {
-        // If the left node exists, check there
-        // Otherwise inform that operation is completed
-        subtrees.get(Left) match {
-          case Some(node) => node ! removeMsg
-          case None => requester ! OperationFinished(id)
-        }
+    if (m.elem == elem) {
+      // Node with such value exists.
+      // Mark the flag and inform the requester
+      removed = true
+      m.requester ! OperationFinished(m.id)
+    } else {
+      val direction = if (m.elem > elem) Right else Left
+      // If the according sub-node exists, check there
+      // Otherwise inform that operation is completed
+      subtrees.get(direction) match {
+        case Some(node) => node ! m
+        case None => m.requester ! OperationFinished(m.id)
       }
-  }
+    }
 
   def receive: Receive = {
     case m: Insert    => insertRightOrLeft(m)
