@@ -27,7 +27,7 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
         m.requester ! OperationFinished(m.id)
       } else {
         val direction = if (m.elem > elem) Right else Left
-        // If the according sub-node node exists, check there
+        // If the according sub-node exists, check there
         // Otherwise create new sub-node and let it inform the requester
         subtrees.get(direction) match {
           case Some(node) => node ! m
@@ -39,29 +39,22 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
       }
 
 
-  def isExistedElement(m: Contains) = m match {
-    case containsMsg @ Contains(requester, id, checkedElem) =>
-      // Compare this node value with checked value
-      if (checkedElem == elem) {
-        // Node with such value exists.
-        // Inform the requester
-        requester ! ContainsResult(id, !removed)
-      } else if (checkedElem > elem) {
-        // If the right node exists, check there
-        // Otherwise inform that node does not exist
-        subtrees.get(Right) match {
-          case Some(node) => node ! containsMsg
-          case None => requester ! ContainsResult(id, false)
-        }
-      } else if (checkedElem < elem) {
-        // If the left node exists, check there
-        // Otherwise inform that node does not exist
-        subtrees.get(Left) match {
-          case Some(node) => node ! containsMsg
-          case None => requester ! ContainsResult(id, false)
-        }
+  def isExistedElement(m: Contains): Unit =
+    // Compare this node value with checked value
+    if (m.elem == elem) {
+      // Node with such value exists.
+      // Inform the requester
+      m.requester ! ContainsResult(m.id, !removed)
+    } else {
+      val direction = if (m.elem > elem) Right else Left
+      // If the according sub-node exists, check there
+      // Otherwise inform that node does not exist
+      subtrees.get(direction) match {
+        case Some(node) => node ! m
+        case None => m.requester ! ContainsResult(m.id, false)
       }
-  }
+    }
+
 
   def removeElement(m: Remove) = m match {
     case removeMsg @ Remove(requester, id, removeElem) =>
