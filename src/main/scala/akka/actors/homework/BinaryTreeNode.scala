@@ -19,35 +19,25 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
   var subtrees = Map[Position, ActorRef]()
   var removed = initiallyRemoved
 
-  def insertRightOrLeft(m: Insert) = m match {
-    case insertMsg @ Insert(requester, id, newElem) =>
+  def insertRightOrLeft(m: Insert): Unit =
       // Compare this node value with new value
-      if (newElem == elem) {
+      if (m.elem == elem) {
         // Node with such value exists.
         // Inform the requester
-        requester ! OperationFinished(id)
-      } else if (newElem > elem) {
-        // If the right node exists, check there
-        // Otherwise create right node and let it inform the requester
-        subtrees.get(Right) match {
-          case Some(node) => node ! insertMsg
+        m.requester ! OperationFinished(m.id)
+      } else {
+        val direction = if (m.elem > elem) Right else Left
+        // If the according sub-node node exists, check there
+        // Otherwise create new sub-node and let it inform the requester
+        subtrees.get(direction) match {
+          case Some(node) => node ! m
           case None =>
-            val rightActor = context.actorOf(BinaryTreeNode.props(newElem, false))
-            subtrees += Right -> rightActor
-            rightActor ! insertMsg
-        }
-      } else if (newElem < elem) {
-        // If the left node exists, check there
-        // Otherwise create left node and let it inform the requester
-        subtrees.get(Left) match {
-          case Some(node) => node ! insertMsg
-          case None =>
-            val leftActor = context.actorOf(BinaryTreeNode.props(newElem, false))
-            subtrees += Left -> leftActor
-            leftActor ! insertMsg
+            val newActor = context.actorOf(BinaryTreeNode.props(m.elem, false))
+            subtrees += direction -> newActor
+            newActor ! m
         }
       }
-  }
+
 
   def isExistedElement(m: Contains) = m match {
     case containsMsg @ Contains(requester, id, checkedElem) =>
