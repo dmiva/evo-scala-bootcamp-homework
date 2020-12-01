@@ -49,7 +49,29 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
       }
   }
 
-  def isExistedElement(m: Contains) = ???
+  def isExistedElement(m: Contains) = m match {
+    case containsMsg @ Contains(requester, id, checkedElem) =>
+      // Compare this node value with new value
+      if (checkedElem == elem) {
+        // Node with such value exists.
+        // Inform the requester
+        requester ! ContainsResult(id, true)
+      } else if (checkedElem > elem) {
+        // If the right node exists, check there
+        // Otherwise inform that node does not exist
+        subtrees.get(Right) match {
+          case Some(node) => node ! containsMsg
+          case None => requester ! ContainsResult(id, false)
+        }
+      } else if (checkedElem < elem) {
+        // If the left node exists, check there
+        // Otherwise inform that node does not exist
+        subtrees.get(Left) match {
+          case Some(node) => node ! containsMsg
+          case None => requester ! ContainsResult(id, false)
+        }
+      }
+  }
 
   def removeElement(m: Remove) = ???
 
