@@ -55,7 +55,7 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
       if (checkedElem == elem) {
         // Node with such value exists.
         // Inform the requester
-        requester ! ContainsResult(id, true)
+        requester ! ContainsResult(id, !removed)
       } else if (checkedElem > elem) {
         // If the right node exists, check there
         // Otherwise inform that node does not exist
